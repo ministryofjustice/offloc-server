@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 
 module.exports = function Index({ logger, fileService }) {
   const router = express.Router();
@@ -9,6 +10,10 @@ module.exports = function Index({ logger, fileService }) {
     const latestFileName = fileService.getLatestFileName();
 
     res.render('pages/index', { latestFileName });
+  });
+
+  router.get('/download-latest', (req, res) => {
+    res.download(path.join(__dirname, '../../reportDownload/20181704.zip'));
   });
 
   return router;

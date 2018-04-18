@@ -49,6 +49,7 @@
     "sass-middleware": "^0.0.3"
   },
   "devDependencies": {
+    "adm-zip": "^0.4.7",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-string": "^1.4.0",
