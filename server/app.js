@@ -19,7 +19,7 @@ const version = moment.now().toString();
 const production = process.env.NODE_ENV === 'production';
 const testMode = process.env.NODE_ENV === 'test';
 
-module.exports = function createApp({ logger, someService }) { // eslint-disable-line no-shadow
+module.exports = function createApp({ logger, fileService }) { // eslint-disable-line no-shadow
   const app = express();
 
   app.set('json spaces', 2);
@@ -130,7 +130,7 @@ module.exports = function createApp({ logger, someService }) { // eslint-disable
   }
 
   // Routing
-  app.use('/', createIndexRouter({ logger, someService }));
+  app.use('/', createIndexRouter({ logger, fileService }));
 
   app.use(handleKnownErrors);
   app.use(renderErrors);

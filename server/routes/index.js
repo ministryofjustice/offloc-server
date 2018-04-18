@@ -1,14 +1,14 @@
 const express = require('express');
 
-module.exports = function Index({ logger, someService }) {
+module.exports = function Index({ logger, fileService }) {
   const router = express.Router();
 
   router.get('/', (req, res) => {
     logger.info('GET index');
 
-    const data = someService.getSomeData();
+    const latestFileName = fileService.getLatestFileName();
 
-    res.render('pages/index', { data });
+    res.render('pages/index', { latestFileName });
   });
 
   return router;
