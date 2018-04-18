@@ -2,8 +2,8 @@ const express = require('express');
 const addRequestId = require('express-request-id')();
 const helmet = require('helmet');
 const csurf = require('csurf');
+const auth = require('http-auth');
 const compression = require('compression');
-const passport = require('passport');
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
 const createIndexRouter = require('./routes/index');
@@ -18,6 +18,13 @@ const config = require('../server/config');
 const version = moment.now().toString();
 const production = process.env.NODE_ENV === 'production';
 const testMode = process.env.NODE_ENV === 'test';
+
+
+const basic = auth.basic({
+  realm: 'offloc-app',
+}, (username, password, callback) => {
+  callback(/.{3,}/.test(username) && /.{3,}/.test(password));
+});
 
 module.exports = function createApp({ logger, fileService }) { // eslint-disable-line no-shadow
   const app = express();
@@ -53,14 +60,14 @@ module.exports = function createApp({ logger, fileService }) { // eslint-disable
     sameSite: 'lax',
   }));
 
-  app.use(passport.initialize());
-  app.use(passport.session());
-
   // Request Processing Configuration
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.use(log.requestLogger());
+
+  // Basic auth
+  app.use(auth.connect(basic));
 
   // Resource Delivery Configuration
   app.use(compression());

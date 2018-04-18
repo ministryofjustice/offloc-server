@@ -104,6 +104,16 @@ anymatch@^2.0.0:
     micromatch "^3.1.4"
     normalize-path "^2.1.1"
 
+apache-crypt@^1.1.2:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/apache-crypt/-/apache-crypt-1.2.1.tgz#d6fc72aa6d27d99c95a94fd188d731eefffa663c"
+  dependencies:
+    unix-crypt-td-js "^1.0.0"
+
+apache-md5@^1.0.6:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/apache-md5/-/apache-md5-1.1.2.tgz#ee49736b639b4f108b6e9e626c6da99306b41692"
+
 aproba@^1.0.3:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/aproba/-/aproba-1.2.0.tgz#6802e6264efd18c790a1b0d517f0f2627bf2c94a"
@@ -242,6 +252,10 @@ bcrypt-pbkdf@^1.0.0:
   resolved "https://registry.yarnpkg.com/bcrypt-pbkdf/-/bcrypt-pbkdf-1.0.1.tgz#63bc5dcb61331b92bc05fd528953c33462a06f8d"
   dependencies:
     tweetnacl "^0.14.3"
+
+bcryptjs@^2.3.0:
+  version "2.4.3"
+  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-2.4.3.tgz#9ab5627b93e60621ff7cdac5da9733027df1d0cb"
 
 binary-extensions@^1.0.0:
   version "1.11.0"
@@ -1664,6 +1678,15 @@ hpkp@2.0.0:
 hsts@2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/hsts/-/hsts-2.1.0.tgz#cbd6c918a2385fee1dd5680bfb2b3a194c0121cc"
+
+http-auth@^3.2.3:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/http-auth/-/http-auth-3.2.3.tgz#636842b71d6e1f2c98dba09af54417a1fef8b61c"
+  dependencies:
+    apache-crypt "^1.1.2"
+    apache-md5 "^1.0.6"
+    bcryptjs "^2.3.0"
+    uuid "^3.0.0"
 
 http-errors@1.6.2, http-errors@~1.6.2:
   version "1.6.2"
@@ -3750,6 +3773,10 @@ unique-string@^1.0.0:
   resolved "https://registry.yarnpkg.com/unique-string/-/unique-string-1.0.0.tgz#9e1057cca851abb93398f8b33ae187b99caec11a"
   dependencies:
     crypto-random-string "^1.0.0"
+
+unix-crypt-td-js@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/unix-crypt-td-js/-/unix-crypt-td-js-1.0.0.tgz#1c0824150481bc7a01d49e98f1ec668d82412f3b"
 
 unpipe@1.0.0, unpipe@~1.0.0:
   version "1.0.0"
