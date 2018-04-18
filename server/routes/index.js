@@ -12,7 +12,7 @@ module.exports = function Index({ logger, fileService }) {
     res.render('pages/index', { latestFileName });
   });
 
-  router.get('/download-latest', (req, res) => {
+  router.get('/:fileName.zip', (req, res) => {
     res.download(path.join(__dirname, '../../reportDownload/20181704.zip'));
   });
 

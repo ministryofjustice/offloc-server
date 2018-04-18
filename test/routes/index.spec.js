@@ -37,7 +37,7 @@ describe('GET /', () => {
 
   it('downloads the latest file available', () =>
     request(app)
-      .get('/download-latest')
+      .get('/20180418.zip')
       .expect('Content-Type', /application\/zip/)
       .expect(200)
       .buffer()
