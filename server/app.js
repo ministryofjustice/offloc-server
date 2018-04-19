@@ -6,14 +6,17 @@ const auth = require('http-auth');
 const compression = require('compression');
 const bodyParser = require('body-parser');
 const cookieSession = require('cookie-session');
-const createIndexRouter = require('./routes/index');
 const sassMiddleware = require('node-sass-middleware');
 const moment = require('moment');
 const path = require('path');
 const log = require('bunyan-request-logger')();
-const logger = require('../log.js');
+
+const appLogger = require('../log.js');
 
 const config = require('../server/config');
+
+const createIndexRouter = require('./routes/index');
+const createHealthRouter = require('./routes/health');
 
 const version = moment.now().toString();
 const production = process.env.NODE_ENV === 'production';
@@ -26,7 +29,7 @@ const basic = auth.basic({
   callback(/.{3,}/.test(username) && /.{3,}/.test(password));
 });
 
-module.exports = function createApp({ logger, fileService }) { // eslint-disable-line no-shadow
+module.exports = function createApp({ logger, fileService, appInfo }) { // eslint-disable-line max-len
   const app = express();
 
   app.set('json spaces', 2);
@@ -138,6 +141,7 @@ module.exports = function createApp({ logger, fileService }) { // eslint-disable
 
   // Routing
   app.use('/', createIndexRouter({ logger, fileService }));
+  app.use('/health', createHealthRouter({ appInfo }));
 
   app.use(handleKnownErrors);
   app.use(renderErrors);
@@ -146,12 +150,12 @@ module.exports = function createApp({ logger, fileService }) { // eslint-disable
 };
 
 function handleKnownErrors(error) {
-  logger.error(error);
+  appLogger.error(error);
   // code to handle errors
 }
 
 function renderErrors(error, req, res) {
-  logger.error(error);
+  appLogger.error(error);
 
   // code to handle unknown errors
 

@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+
+/* eslint-disable no-console, comma-dangle */
+
+const pollEndpointFor = require('poll-endpoint-for');
+
+pollEndpointFor(
+  {
+    status: 'OK',
+    gitRef: process.env.GIT_REF,
+  },
+  {
+    url: process.env.APP_BASE_URL,
+    initialWait: process.env.WAIT_DURATION,
+    requestInterval: 5000,
+    retryCount: 60,
+    onSuccess: () => {
+      console.log('✨ Success');
+      process.exit(0);
+    },
+    onError: () => {
+      console.log(`💔  Failed to receive an "OK" status from ${process.env.APP_BASE_URL}`);
+      process.exit(1);
+    },
+  }
+);
