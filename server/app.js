@@ -1,6 +1,7 @@
 const express = require('express');
 const addRequestId = require('express-request-id')();
 const helmet = require('helmet');
+const hsts = require('hsts');
 const csurf = require('csurf');
 const auth = require('http-auth');
 const compression = require('compression');
@@ -49,6 +50,12 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
   // 1. https://expressjs.com/en/advanced/best-practice-security.html,
   // 2. https://www.npmjs.com/package/helmet
   app.use(helmet());
+
+  app.use(hsts({
+    maxAge: 15552000, // 180 days in seconds
+    preload: true,
+    includeSubDomains: true,
+  })); // Strict-Transport-Security: max-age: 15552000; includeSubDomains
 
   app.use(addRequestId);
 
