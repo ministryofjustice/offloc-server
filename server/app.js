@@ -76,9 +76,6 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
 
   app.use(log.requestLogger());
 
-  // Basic auth
-  app.use(auth.connect(basic));
-
   // Resource Delivery Configuration
   app.use(compression());
 
@@ -147,8 +144,9 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
   }
 
   // Routing
-  app.use('/', createIndexRouter({ logger, fileService }));
   app.use('/health', createHealthRouter({ appInfo }));
+
+  app.use('/', auth.connect(basic), createIndexRouter({ logger, fileService }));
 
   app.use(renderErrors);
 
