@@ -8,7 +8,9 @@
     "css-build": "./bin/build-css",
     "clean": "rm -rf public/* .port.tmp *.log build/* uploads/* test-results.xml",
     "lint": "eslint . --cache --max-warnings 0",
-    "test": "NODE_ENV=test mocha test/*.spec.js test/**/*.spec.js"
+    "test": "NODE_ENV=test mocha test/*.spec.js test/**/*.spec.js",
+    "wait-for-deploy": "node ./bin/wait-for-deploy",
+    "record-build-info": "node ./bin/record-build-info"
   },
   "engines": {
     "node": ">= 8.4.0",
