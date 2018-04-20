@@ -3,18 +3,17 @@
   "version": "0.0.0",
   "scripts": {
     "start": "node server.js",
-    "start:dev": "yarn build && DEBUG=offloc-server* nodemon server.js | bunyan -o short",
-    "build": "yarn run css-build",
+    "start:dev": "npm run build && DEBUG=offloc-server* nodemon server.js | bunyan -o short",
+    "build": "npm run css-build",
     "css-build": "./bin/build-css",
-    "clean": "rm -rf public/* .port.tmp *.log build/* uploads/* test-results.xml",
     "lint": "eslint . --cache --max-warnings 0",
     "test": "NODE_ENV=test mocha test/*.spec.js test/**/*.spec.js",
     "wait-for-deploy": "node ./bin/wait-for-deploy",
     "record-build-info": "node ./bin/record-build-info"
   },
   "engines": {
-    "node": ">= 8.4.0",
-    "npm": ">=5.3.0"
+    "node": ">= 8.6.0",
+    "npm": ">=5.8.0"
   },
   "nodemonConfig": {
     "ignore": [

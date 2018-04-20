@@ -10,34 +10,29 @@ jobs:
         - /deploy-to.*/
     steps:
       - checkout
+      - run:
+          name: Update npm
+          command: 'sudo npm install -g npm@latest'
       - restore_cache:
-          key: node_modules-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
-          key: node_modules-{{ checksum "package.json" }}
-          key: node_modules
-      - restore_cache:
-          key: yarn-cache
+          key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Install Dependencies
-          command: yarn --frozen-lockfile
+          command: npm ci
       - save_cache:
-          key: node_modules-{{ checksum "package.json" }}-{{ checksum "yarn.lock" }}
+          key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
-            - ./node_modules
-      - save_cache:
-          key: yarn-cache
-          paths:
-            - ~/.yarn-cache
+            - node_modules
       - run:
           name: Linter
-          command: yarn run lint
+          command: npm run lint
       - run:
           name: Tests
-          command: yarn test --reporter mocha-junit-reporter
+          command: npm run test -- --reporter mocha-junit-reporter
           environment:
             MOCHA_FILE: ./reports/unit/test-results.xml
       - run:
           name: Build assets
-          command: yarn build
+          command: npm run build
 
       - deploy:
           name: Build Derived Git Commit
@@ -47,7 +42,7 @@ jobs:
               BUILD_NUMBER=$CIRCLE_BUILD_NUM \
               GIT_REF=$CIRCLE_SHA1 \
               GIT_DATE=$(git log --format=%cd -n1 --date=iso $CIRCLE_SHA1) \
-                yarn run record-build-info
+                npm run record-build-info
 
               git add --force --verbose build-info.json assets/stylesheets/application.css
               git config user.name "Circle CI"
@@ -68,7 +63,7 @@ jobs:
               GIT_REF=$CIRCLE_SHA1 \
               APP_BASE_URL=https://offloc-stage.hmpps.dsd.io/health \
               WAIT_DURATION=45000 \
-                yarn wait-for-deploy
+                npm run wait-for-deploy
 
             fi
 

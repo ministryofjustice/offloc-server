@@ -6,7 +6,7 @@ A simple starter kit to start writing node app with the gov uk front end toolkit
 
 
 ## Getting started
-Install dependencies using `yarn install` ensure you are using >= `Node v8.4.0`
+Install dependencies using `npm ci` ensure you are using >= `Node v8.4.0`
 
 Ensure you have a `.env` file containing all default env variables
 
@@ -15,25 +15,25 @@ Ensure you have a `.env` file containing all default env variables
 **Starting the app**
 
 ### Build assets
-`yarn build`
+`npm run build`
 
 ### Start the app.
 
 Ensure you build assets first
 
-`yarn start`
+`npm run start`
 
 ### Runing the app in dev mode**
 
-`yarn start:dev`
+`npm run start:dev`
 
 ### Run linter
 
-`yarn lint`
+`npm run lint`
 
 ### Run tests
 
-`yarn test`
+`npm run test`
 
 
 ## Gotchas
