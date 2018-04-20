@@ -150,21 +150,13 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
   app.use('/', createIndexRouter({ logger, fileService }));
   app.use('/health', createHealthRouter({ appInfo }));
 
-  app.use(handleKnownErrors);
   app.use(renderErrors);
 
   return app;
 };
 
-function handleKnownErrors(error) {
+function renderErrors(error, req, res, next) { // eslint-disable-line no-unused-vars
   appLogger.error(error);
-  // code to handle errors
-}
-
-function renderErrors(error, req, res) {
-  appLogger.error(error);
-
-  // code to handle unknown errors
 
   res.locals.error = error;
   res.locals.stack = production ? null : error.stack;
