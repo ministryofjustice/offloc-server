@@ -13,6 +13,8 @@ module.exports = function Index({ logger, fileService }) {
   });
 
   router.get('/:fileName.zip', (req, res) => {
+    // This mime type appears to be allowed by Quantum
+    res.type('application/x-zip-compressed');
     res.download(path.join(__dirname, '../../reportDownload/20181704.zip'));
   });
 
