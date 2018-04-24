@@ -3,6 +3,6 @@ const bunyanFormat = require('bunyan-format');
 
 const formatOut = bunyanFormat({ outputMode: 'short' });
 
-const log = bunyan.createLogger({ name: 'Offloc server', stream: formatOut, level: 'debug' });
+const logger = bunyan.createLogger({ name: 'Offloc server', stream: formatOut, level: 'debug' });
 
-module.exports = log;
+module.exports = logger;
