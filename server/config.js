@@ -12,5 +12,7 @@ function get(name, fallback, options = {}) {
 
 module.exports = {
   dev: !production,
-  sessionSecret: get('SESSION_SECRET', 'app-insecure-default-session', { requireInProduction: true }),
+  port: get('PORT', 3000, { requireInProduction: true }),
+  staticResourceCacheDuration: production ? 864000000 : 0,
+  appinsightsKey: get('APPINSIGHTS_INSTRUMENTATIONKEY', 'your-app-insights-key', { requireInProduction: true }),
 };

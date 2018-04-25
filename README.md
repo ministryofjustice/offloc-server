@@ -1,8 +1,8 @@
-# GOVUK startkit
+# Offloc Server
 
 [![CircleCI](https://circleci.com/gh/ministryofjustice/offloc-server.svg?style=svg)](https://circleci.com/gh/ministryofjustice/offloc-server)
 
-A simple starter kit to start writing node app with the gov uk front end toolkit.
+A simple server for downloading the latest NOMIS extract.
 
 
 ## Getting started

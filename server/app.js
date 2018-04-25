@@ -2,27 +2,22 @@ const express = require('express');
 const addRequestId = require('express-request-id')();
 const helmet = require('helmet');
 const hsts = require('hsts');
+const cookieParser = require('cookie-parser');
 const csurf = require('csurf');
 const auth = require('http-auth');
 const compression = require('compression');
-const bodyParser = require('body-parser');
-const cookieSession = require('cookie-session');
 const sassMiddleware = require('node-sass-middleware');
-const moment = require('moment');
 const path = require('path');
-const log = require('bunyan-request-logger')();
+const bunyanMiddleware = require('bunyan-middleware');
 
-const appLogger = require('../log.js');
+const appLogger = require('./loggers/logger.js');
 
-const config = require('../server/config');
+const config = require('./config');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
 
-const version = moment.now().toString();
-const production = process.env.NODE_ENV === 'production';
-const testMode = process.env.NODE_ENV === 'test';
-
+const version = Date.now().toString();
 
 const basic = auth.basic({
   realm: 'offloc-app',
@@ -44,7 +39,7 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
   app.set('view engine', 'ejs');
 
   // Server Configuration
-  app.set('port', process.env.PORT || 3000);
+  app.set('port', config.port);
 
   // Secure code best practice - see:
   // 1. https://expressjs.com/en/advanced/best-practice-security.html,
@@ -59,39 +54,25 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
 
   app.use(addRequestId);
 
-  app.use(cookieSession({
-    name: 'session',
-    keys: [config.sessionSecret],
-    maxAge: 60 * 60 * 1000,
-    secure: config.https,
-    httpOnly: true,
-    signed: true,
-    overwrite: true,
-    sameSite: 'lax',
-  }));
-
   // Request Processing Configuration
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: true }));
-
-  app.use(log.requestLogger());
+  app.use(bunyanMiddleware({ logger }));
 
   // Resource Delivery Configuration
   app.use(compression());
 
   // Cachebusting version string
-  if (production) {
+  if (!config.dev) {
     // Version only changes on reboot
     app.locals.version = version;
   } else {
     // Version changes every request
     app.use((req, res, next) => {
-      res.locals.version = moment.now().toString();
+      res.locals.version = Date.now().toString();
       return next();
     });
   }
 
-  if (!production) {
+  if (config.dev) {
     app.use('/public', sassMiddleware({
       src: path.join(__dirname, '../assets/sass'),
       dest: path.join(__dirname, '../assets/stylesheets'),
@@ -138,10 +119,12 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
   // Don't cache dynamic resources
   app.use(helmet.noCache());
 
+  // Cookie parser
+  app.use(cookieParser());
+
   // CSRF protection
-  if (!testMode) {
-    app.use(csurf());
-  }
+  app.use(csurf({ cookie: true }));
+
 
   // Routing
   app.use('/health', createHealthRouter({ appInfo }));
@@ -157,8 +140,8 @@ function renderErrors(error, req, res, next) { // eslint-disable-line no-unused-
   appLogger.error(error);
 
   res.locals.error = error;
-  res.locals.stack = production ? null : error.stack;
-  res.locals.message = production ?
+  res.locals.stack = !config.dev ? null : error.stack;
+  res.locals.message = !config.dev ?
     'Something went wrong. The error has been logged. Please try again' : error.message;
 
   res.status(error.status || 500);
