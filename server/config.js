@@ -15,4 +15,6 @@ module.exports = {
   port: get('PORT', 3000, { requireInProduction: true }),
   staticResourceCacheDuration: production ? 864000000 : 0,
   appinsightsKey: get('APPINSIGHTS_INSTRUMENTATIONKEY', 'your-app-insights-key', { requireInProduction: true }),
+  azureStorageConnectionString: get('AZURE_STORAGE_CONNECTION_STRING', 'your-key', { requireInProduction: true }),
+  azureBlobStorageContainerName: get('AZURE_STORAGE_CONTAINER_NAME', 'your-container', { requireInProduction: true }),
 };

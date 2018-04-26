@@ -13,10 +13,16 @@
         <h1 class="heading-medium">Download Nomis Report</h1>
         <table>
           <tbody>
+            <% if (latestFileName) {%>
             <tr>
               <td><%= latestFileName %></td>
               <td class="numeric"><a class="button button-start" target="_blank" href="/<%= latestFileName %>" role="button">Download</a></td>
             </tr>
+            <% }  else { %>
+              <tr>
+                <td colspan="2">No files found for download.</td>
+              </tr>
+            <% } %>
           </tbody>
         </table>
       </div>

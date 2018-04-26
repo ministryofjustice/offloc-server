@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').load(); // eslint-disable-line global-require
+}
+
 require('applicationinsights');
 
 const app = require('./server/index');

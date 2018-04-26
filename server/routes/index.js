@@ -1,21 +1,38 @@
 const express = require('express');
-const path = require('path');
+const logger = require('../loggers/logger');
 
-module.exports = function Index({ logger, fileService }) {
+module.exports = function Index({ fileService }) {
   const router = express.Router();
 
-  router.get('/', (req, res) => {
-    logger.info('GET index');
+  router.get('/', async (req, res) => {
+    try {
+      const file = await fileService.todaysFile();
 
-    const latestFileName = fileService.getLatestFileName();
-
-    res.render('pages/index', { latestFileName });
+      res.render('pages/index', { latestFileName: file && file.name });
+    } catch (error) {
+      logger.error(error);
+      res.render('pages/index', { latestFileName: null });
+    }
   });
 
+
   router.get('/:fileName.zip', (req, res) => {
-    // This mime type appears to be allowed by Quantum
-    res.type('application/x-zip-compressed');
-    res.download(path.join(__dirname, '../../reportDownload/20181704.zip'));
+    const fileName = `${req.params.fileName}.zip`;
+    const stream = fileService.downloadFile(fileName);
+
+    stream
+      .on('error', (error) => {
+        logger.error(error);
+        res.status(404);
+        res.render('pages/404');
+      });
+
+    stream
+      .on('data', () => {
+        res.type('application/x-zip-compressed');
+      });
+
+    stream.pipe(res);
   });
 
   return router;

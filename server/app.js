@@ -10,7 +10,7 @@ const sassMiddleware = require('node-sass-middleware');
 const path = require('path');
 const bunyanMiddleware = require('bunyan-middleware');
 
-const appLogger = require('./loggers/logger.js');
+const logger = require('./loggers/logger.js');
 
 const config = require('./config');
 
@@ -25,7 +25,7 @@ const basic = auth.basic({
   callback(/.{3,}/.test(username) && /.{3,}/.test(password));
 });
 
-module.exports = function createApp({ logger, fileService, appInfo }) { // eslint-disable-line max-len
+module.exports = function createApp({ fileService, appInfo }) { // eslint-disable-line max-len
   const app = express();
 
   app.set('json spaces', 2);
@@ -137,7 +137,7 @@ module.exports = function createApp({ logger, fileService, appInfo }) { // eslin
 };
 
 function renderErrors(error, req, res, next) { // eslint-disable-line no-unused-vars
-  appLogger.error(error);
+  logger.error(error);
 
   res.locals.error = error;
   res.locals.stack = !config.dev ? null : error.stack;
