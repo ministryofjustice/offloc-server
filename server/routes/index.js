@@ -28,7 +28,7 @@ module.exports = function Index({ fileService }) {
       });
 
     stream
-      .on('data', () => {
+      .once('data', () => {
         res.type('application/x-zip-compressed');
       });
 
