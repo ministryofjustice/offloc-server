@@ -26,7 +26,9 @@
   },
   "dependencies": {
     "applicationinsights": "^1.0.2",
+    "azure-keyvault": "^3.0.4-preview",
     "azure-storage": "^2.8.2",
+    "bcrypt": "^2.0.1",
     "bunyan": "^1.8.12",
     "bunyan-format": "^0.2.1",
     "bunyan-middleware": "^0.8.0",
@@ -46,6 +48,7 @@
     "http-errors": "~1.6.3",
     "mkdirp": "^0.5.1",
     "morgan": "~1.9.0",
+    "ms-rest-azure": "^2.5.5",
     "node-sass-middleware": "0.11.0",
     "passport": "^0.4.0",
     "poll-endpoint-for": "^0.0.4",

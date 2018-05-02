@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const hsts = require('hsts');
 const cookieParser = require('cookie-parser');
 const csurf = require('csurf');
-const auth = require('http-auth');
 const compression = require('compression');
 const sassMiddleware = require('node-sass-middleware');
 const path = require('path');
@@ -13,19 +12,14 @@ const bunyanMiddleware = require('bunyan-middleware');
 const logger = require('./loggers/logger.js');
 
 const config = require('./config');
+const authenticationMiddleWare = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
 
 const version = Date.now().toString();
 
-const basic = auth.basic({
-  realm: 'offloc-app',
-}, (username, password, callback) => {
-  callback(/.{3,}/.test(username) && /.{3,}/.test(password));
-});
-
-module.exports = function createApp({ fileService, appInfo }) { // eslint-disable-line max-len
+module.exports = function createApp({ fileService, appInfo, authenticationService }) { // eslint-disable-line max-len
   const app = express();
 
   app.set('json spaces', 2);
@@ -129,7 +123,7 @@ module.exports = function createApp({ fileService, appInfo }) { // eslint-disabl
   // Routing
   app.use('/health', createHealthRouter({ appInfo }));
 
-  app.use('/', auth.connect(basic), createIndexRouter({ logger, fileService }));
+  app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ fileService }));
 
   app.use(renderErrors);
 
