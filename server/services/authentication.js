@@ -4,11 +4,9 @@ const { KeyVaultClient } = require('azure-keyvault');
 
 const logger = require('../loggers/logger');
 const config = require('../config');
+const { createVaultCredentials } = require('./azure-local');
 
 
-const clientId = config.azureClientId;
-const domain = config.azureTenantId;
-const secret = config.azureClientSecret;
 const keyVaultUri = config.keyVaultUrl;
 
 
@@ -16,7 +14,8 @@ function getKeyVaultCredentials() {
   if (config.appSettingsWebsiteSiteName) {
     return msRestAzure.loginWithAppServiceMSI();
   }
-  return msRestAzure.loginWithServicePrincipalSecret(clientId, secret, domain);
+
+  return Promise.resolve(createVaultCredentials());
 }
 
 async function createKeyVaultService() {
@@ -30,7 +29,10 @@ async function createKeyVaultService() {
 
 
 function keyVaultSecretSetter(client) {
-  const attributes = { expires: new Date('2050-02-02T08:00:00.000Z'), notBefore: Date.today() };
+  const attributes = {
+    expires: new Date('2050-02-02T08:00:00.000Z'),
+    notBefore: Date.today(),
+  };
 
   return (secretName, value) => client.setSecret(keyVaultUri, secretName, value, { contentType: 'user account', secretAttributes: attributes });
 }

@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "applicationinsights": "^1.0.2",
+    "azure": "^2.2.1-preview",
     "azure-keyvault": "^3.0.4-preview",
     "azure-storage": "^2.8.2",
     "bcrypt": "^2.0.1",

@@ -4,7 +4,6 @@ const express = require('express');
 const authenticationMiddleWare = require('../../server/middleware/authentication');
 const config = require('../../server/config');
 
-
 const simpleRoute = (req, res) => {
   res.status(200).end();
 };

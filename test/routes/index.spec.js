@@ -2,11 +2,14 @@ const request = require('supertest');
 const express = require('express');
 const path = require('path');
 const AdmZip = require('adm-zip');
-const azure = require('azure-storage');
+const azure = require('azure');
+const azureStorage = require('azure-storage');
 
 const createIndexRouter = require('../../server/routes/index');
 const { createBlobServiceSuccess, createBlobServiceError, binaryParser } = require('../test-helpers');
 const fileService = require('../../server/services/file');
+const azureLocal = require('../../server/services/azure-local');
+
 
 const router = createIndexRouter({ fileService: fileService() });
 
@@ -25,13 +28,29 @@ describe('GET /', () => {
     lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
     exists: true,
   };
+  let azureLocalStub;
+  let azureStub;
+
+  before(() => {
+    azureLocalStub = sinon.stub(azureLocal, 'createBlobStorageCredentials').returns(null);
+    azureStub = sinon.stub(azure, 'createStorageManagementClient').callsFake(() => ({
+      storageAccounts: {
+        listKeys: sinon.stub().returns({ keys: [{ value: 'foo' }] }),
+      },
+    }));
+  });
+
+  after(() => {
+    azureLocalStub.restore();
+    azureStub.restore();
+  });
 
   describe('when there is a file available for download', () => {
     let stub;
 
     beforeEach(() => {
       const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azure, 'createBlobService').callsFake(blobService);
+      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
     });
 
     afterEach(() => {
@@ -53,7 +72,7 @@ describe('GET /', () => {
 
     beforeEach(() => {
       const blobService = createBlobServiceError();
-      stub = sinon.stub(azure, 'createBlobService').callsFake(blobService);
+      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
     });
 
     afterEach(() => {
@@ -75,7 +94,7 @@ describe('GET /', () => {
 
     beforeEach(() => {
       const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azure, 'createBlobService').callsFake(blobService);
+      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
     });
 
     afterEach(() => {
@@ -102,7 +121,7 @@ describe('GET /', () => {
 
     beforeEach(() => {
       const blobService = createBlobServiceError();
-      stub = sinon.stub(azure, 'createBlobService').callsFake(blobService);
+      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
     });
 
     afterEach(() => {

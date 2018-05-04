@@ -9,30 +9,35 @@ module.exports = function Index({ fileService }) {
       const file = await fileService.todaysFile();
 
       res.render('pages/index', { latestFileName: file && file.name });
-    } catch (error) {
-      logger.error(error);
+    } catch (exception) {
+      logger.error(exception);
       res.render('pages/index', { latestFileName: null });
     }
   });
 
 
-  router.get('/:fileName.zip', (req, res) => {
-    const fileName = `${req.params.fileName}.zip`;
-    const stream = fileService.downloadFile(fileName);
+  router.get('/:fileName.zip', async (req, res, next) => {
+    try {
+      const fileName = `${req.params.fileName}.zip`;
+      const stream = await fileService.downloadFile(fileName);
 
-    stream
-      .on('error', (error) => {
-        logger.error(error);
-        res.status(404);
-        res.render('pages/404');
-      });
+      stream
+        .on('error', (error) => {
+          logger.error(error);
+          res.status(404);
+          res.render('pages/404');
+        });
 
-    stream
-      .once('data', () => {
-        res.type('application/x-zip-compressed');
-      });
+      stream
+        .once('data', () => {
+          res.type('application/x-zip-compressed');
+        });
 
-    stream.pipe(res);
+      stream.pipe(res);
+    } catch (exception) {
+      logger.error(exception);
+      next(exception);
+    }
   });
 
   return router;
