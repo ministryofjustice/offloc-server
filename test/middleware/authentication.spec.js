@@ -5,7 +5,7 @@ const authenticationMiddleWare = require('../../server/middleware/authentication
 const config = require('../../server/config');
 
 const simpleRoute = (req, res) => {
-  res.status(200).end();
+  res.sendStatus(200);
 };
 
 describe('AuthenticationMiddleware', () => {
