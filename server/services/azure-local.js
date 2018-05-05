@@ -1,7 +1,8 @@
 const { KeyVaultCredentials } = require('azure-keyvault');
 const { exec } = require('child_process');
 
-let cache = null;
+let blobStorageCache = null;
+let keyVaultCache = null;
 
 function tokenExpired(tokenExpiryTime) {
   const expiryTime = new Date(tokenExpiryTime);
@@ -15,8 +16,8 @@ function createSignedRequest(data) {
   return {
     signRequest(webResource, callback) {
       const authorization = `${data.tokenType} ${data.accessToken}`;
-
-      webResource.headers.authorization = authorization; // eslint-disable-line no-param-reassign, max-len
+      // eslint-disable-next-line no-param-reassign, max-len
+      webResource.headers.authorization = authorization;
 
       return callback(null);
     },
@@ -28,8 +29,16 @@ function createVaultCredentials() {
 }
 
 function authenticator(challenge, callback) {
-  getAzureAuthorizationFromCli(challenge.resource, (err, auth) => {
+  if (keyVaultCache && !tokenExpired(keyVaultCache.expiresOn)) {
+    return callback(null, `${keyVaultCache.tokenType} ${keyVaultCache.accessToken}`);
+  }
+
+  return getAzureAuthorizationFromCli(challenge.resource, (err, auth) => {
     if (err) return callback(err);
+
+    // update keyVaultCache
+    keyVaultCache = auth;
+
     return callback(null, `${auth.tokenType} ${auth.accessToken}`);
   });
 }
@@ -44,13 +53,13 @@ function createBlobStorageCredentials(subscriptionId) {
 
 function getBlobStorageCredentials(subscriptionId) {
   return new Promise((resolve, reject) => {
-    if (cache && !tokenExpired(cache.expiresOn)) {
-      return resolve(createSignedRequest(cache));
+    if (blobStorageCache && !tokenExpired(blobStorageCache.expiresOn)) {
+      return resolve(createSignedRequest(blobStorageCache));
     }
 
     return executeAzureCmd(`az account get-access-token -s "${subscriptionId}"`, (error, data) => {
-      // update cache
-      cache = data;
+      // update blobStorageCache
+      blobStorageCache = data;
 
       if (error) {
         reject(error);

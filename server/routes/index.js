@@ -35,7 +35,6 @@ module.exports = function Index({ fileService }) {
 
       stream.pipe(res);
     } catch (exception) {
-      logger.error(exception);
       next(exception);
     }
   });

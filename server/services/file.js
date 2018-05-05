@@ -23,11 +23,11 @@ function getStorageCredentials() {
 
 async function createBlobServiceClient() {
   const credentials = await getStorageCredentials();
-  const resourceGroup = 'offloc-stage';
-  const accountName = 'offlocstagestorage';
+  const resourceGroup = config.azureBloStorageResourceGroup;
+  const accountName = config.azureBlobStorageAccountName;
   const subscriptionId = config.azureBlobStorageSubscriptionId;
   const containerName = config.azureBlobStorageContainerName;
-  const permissions = 'rwd';
+  const permissions = 'r';
   const startDate = new Date().toUTCString();
   const endDate = addHoursToTime(new Date(), 1).toUTCString();
 
