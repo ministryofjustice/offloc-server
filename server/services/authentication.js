@@ -61,8 +61,10 @@ function checkUserInKeyVault(client) {
 
   return async (username, password) => {
     try {
+      logger.debug({ user: username }, 'Fetching user from vault');
       const { value: vaultPasswordHash } = await getSecret(username);
 
+      logger.debug({ user: username }, 'Comparing password');
       return bcrypt.compare(password, vaultPasswordHash);
     } catch (error) {
       logger.error(error);
