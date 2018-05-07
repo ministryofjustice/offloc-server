@@ -8,6 +8,7 @@ module.exports = function authenticationMiddleWare(authenticationService) {
     const auth = basicAuth(req);
 
     if (!auth || !auth.name || !auth.pass) {
+      req.log.info('No auth details included');
       return unauthorized(res);
     }
 
