@@ -12,7 +12,9 @@ const keyVaultUri = config.keyVaultUrl;
 
 function getKeyVaultCredentials() {
   if (config.appSettingsWebsiteSiteName) {
-    return msRestAzure.loginWithAppServiceMSI();
+    return msRestAzure.loginWithAppServiceMSI({
+      resource: 'https://vault.azure.net',
+    });
   }
 
   return Promise.resolve(createVaultCredentials());
