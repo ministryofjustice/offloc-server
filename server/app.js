@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const hsts = require('hsts');
 const cookieParser = require('cookie-parser');
 const csurf = require('csurf');
-const auth = require('http-auth');
 const compression = require('compression');
 const sassMiddleware = require('node-sass-middleware');
 const path = require('path');
@@ -13,19 +12,14 @@ const bunyanMiddleware = require('bunyan-middleware');
 const logger = require('./loggers/logger.js');
 
 const config = require('./config');
+const authenticationMiddleWare = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
 
 const version = Date.now().toString();
 
-const basic = auth.basic({
-  realm: 'offloc-app',
-}, (username, password, callback) => {
-  callback(/.{3,}/.test(username) && /.{3,}/.test(password));
-});
-
-module.exports = function createApp({ fileService, appInfo }) { // eslint-disable-line max-len
+module.exports = function createApp({ fileService, appInfo, authenticationService }) {
   const app = express();
 
   app.set('json spaces', 2);
@@ -72,39 +66,6 @@ module.exports = function createApp({ fileService, appInfo }) { // eslint-disabl
     });
   }
 
-  if (config.dev) {
-    app.use('/public', sassMiddleware({
-      src: path.join(__dirname, '../assets/sass'),
-      dest: path.join(__dirname, '../assets/stylesheets'),
-      debug: true,
-      outputStyle: 'compressed',
-      prefix: '/stylesheets/',
-      includePaths: [
-        'node_modules/govuk_frontend_toolkit/stylesheets',
-        'node_modules/govuk_template_jinja/assets/stylesheets',
-        'node_modules/govuk-elements-sass/public/sass',
-      ],
-    }));
-  }
-
-  //  Static Resources Configuration
-  const cacheControl = { maxAge: config.staticResourceCacheDuration * 1000 };
-
-  [
-    '../public',
-    '../assets',
-    '../assets/stylesheets',
-    '../node_modules/govuk_template_jinja/assets',
-    '../node_modules/govuk_frontend_toolkit',
-  ].forEach((dir) => {
-    app.use('/public', express.static(path.join(__dirname, dir), cacheControl));
-  });
-
-  [
-    '../node_modules/govuk_frontend_toolkit/images',
-  ].forEach((dir) => {
-    app.use('/public/images/icons', express.static(path.join(__dirname, dir), cacheControl));
-  });
 
   // GovUK Template Configuration
   app.locals.asset_path = '/public/';
@@ -126,17 +87,54 @@ module.exports = function createApp({ fileService, appInfo }) { // eslint-disabl
   app.use(csurf({ cookie: true }));
 
 
-  // Routing
+  // Routes
   app.use('/health', createHealthRouter({ appInfo }));
+  app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ fileService }));
 
-  app.use('/', auth.connect(basic), createIndexRouter({ logger, fileService }));
 
+  // Static Resources Configuration
+  if (config.dev) {
+    app.use('/public', sassMiddleware({
+      src: path.join(__dirname, '../assets/sass'),
+      dest: path.join(__dirname, '../assets/stylesheets'),
+      debug: true,
+      outputStyle: 'compressed',
+      prefix: '/stylesheets/',
+      includePaths: [
+        'node_modules/govuk_frontend_toolkit/stylesheets',
+        'node_modules/govuk_template_jinja/assets/stylesheets',
+        'node_modules/govuk-elements-sass/public/sass',
+      ],
+    }));
+  }
+
+  const cacheControl = { maxAge: config.staticResourceCacheDuration * 1000 };
+
+  [
+    '../public',
+    '../assets',
+    '../assets/stylesheets',
+    '../node_modules/govuk_template_jinja/assets',
+    '../node_modules/govuk_frontend_toolkit',
+  ].forEach((dir) => {
+    app.use('/public', express.static(path.join(__dirname, dir), cacheControl));
+  });
+
+  [
+    '../node_modules/govuk_frontend_toolkit/images',
+  ].forEach((dir) => {
+    app.use('/public/images/icons', express.static(path.join(__dirname, dir), cacheControl));
+  });
+
+
+  // Error Handling
   app.use(renderErrors);
 
   return app;
 };
 
-function renderErrors(error, req, res, next) { // eslint-disable-line no-unused-vars
+// eslint-disable-next-line no-unused-vars
+function renderErrors(error, req, res, next) {
   logger.error(error);
 
   res.locals.error = error;
