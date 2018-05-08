@@ -1,12 +1,12 @@
 const express = require('express');
 const logger = require('../loggers/logger');
 
-module.exports = function Index({ fileService }) {
+module.exports = function Index({ storageService }) {
   const router = express.Router();
 
   router.get('/', async (req, res) => {
     try {
-      const file = await fileService.todaysFile();
+      const file = await storageService.todaysFile();
 
       res.render('pages/index', { latestFileName: file && file.name });
     } catch (exception) {
@@ -19,7 +19,7 @@ module.exports = function Index({ fileService }) {
   router.get('/:fileName.zip', async (req, res, next) => {
     try {
       const fileName = `${req.params.fileName}.zip`;
-      const stream = await fileService.downloadFile(fileName);
+      const stream = await storageService.downloadFile(fileName);
 
       stream
         .on('error', (error) => {

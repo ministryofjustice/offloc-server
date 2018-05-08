@@ -112,7 +112,7 @@ const downloadFile = async (blobName) => {
 };
 
 
-module.exports = function fileService() {
+module.exports = function storageService() {
   return {
     downloadFile,
     todaysFile,

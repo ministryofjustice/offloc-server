@@ -7,11 +7,11 @@ const azureStorage = require('azure-storage');
 
 const createIndexRouter = require('../../server/routes/index');
 const { createBlobServiceSuccess, createBlobServiceError, binaryParser } = require('../test-helpers');
-const fileService = require('../../server/services/file');
+const storageService = require('../../server/services/storage');
 const azureLocal = require('../../server/services/azure-local');
 
 
-const router = createIndexRouter({ fileService: fileService() });
+const router = createIndexRouter({ storageService: storageService() });
 
 const app = express();
 app.set('views', path.join(__dirname, '../../server/views'));

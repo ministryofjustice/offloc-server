@@ -1,6 +1,6 @@
 const config = require('./config');
 const createApp = require('./app');
-const fileService = require('./services/file');
+const storageService = require('./services/storage');
 const appInfoService = require('./services/app-info');
 const authenticationService = require('./services/authentication');
 
@@ -8,7 +8,7 @@ const buildInfo = config.dev ? null : require('../build-info.json'); // eslint-d
 
 const app = createApp({
   authenticationService,
-  fileService: fileService(),
+  storageService: storageService(),
   appInfo: appInfoService(buildInfo),
 });
 
