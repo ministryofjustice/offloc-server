@@ -48,9 +48,6 @@ module.exports = function createApp({ fileService, appInfo, authenticationServic
 
   app.use(addRequestId);
 
-  // Request Processing Configuration
-  app.use(bunyanMiddleware({ logger }));
-
   // Resource Delivery Configuration
   app.use(compression());
 
@@ -80,17 +77,7 @@ module.exports = function createApp({ fileService, appInfo, authenticationServic
   // Don't cache dynamic resources
   app.use(helmet.noCache());
 
-  // Cookie parser
-  app.use(cookieParser());
-
-  // CSRF protection
-  app.use(csurf({ cookie: true }));
-
-
-  // Routes
   app.use('/health', createHealthRouter({ appInfo }));
-  app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ fileService }));
-
 
   // Static Resources Configuration
   if (config.dev) {
@@ -126,6 +113,19 @@ module.exports = function createApp({ fileService, appInfo, authenticationServic
     app.use('/public/images/icons', express.static(path.join(__dirname, dir), cacheControl));
   });
 
+  // Cookie parser
+  app.use(cookieParser());
+
+  // CSRF protection
+  app.use(csurf({ cookie: true }));
+
+  app.use(bunyanMiddleware({
+    logger,
+    excludeHeaders: ['authorization'],
+  }));
+
+  // Routes
+  app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ fileService }));
 
   // Error Handling
   app.use(renderErrors);
