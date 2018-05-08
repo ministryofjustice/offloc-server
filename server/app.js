@@ -127,6 +127,11 @@ module.exports = function createApp({ storageService, appInfo, authenticationSer
   // Routes
   app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ storageService }));
 
+  app.use('*', (req, res) => {
+    res.status(404);
+    res.render('pages/404');
+  });
+
   // Error Handling
   app.use(renderErrors);
 
