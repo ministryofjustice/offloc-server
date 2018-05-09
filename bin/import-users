@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+
+/* eslint-disable no-console */
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').load(); // eslint-disable-line global-require
+}
+
+const fs = require('fs');
+const path = require('path');
+const { timeout, TimeoutError } = require('promise-timeout');
+const bunyan = require('bunyan');
+const bunyanFormat = require('bunyan-format');
+
+const { createKeyVaultService } = require('../server/services/keyVault');
+
+const formatOut = bunyanFormat({ outputMode: 'short' });
+const log = bunyan.createLogger({ name: 'Offloc Import', stream: formatOut, level: 'debug' });
+const args = process.argv.slice(2);
+const [filePath] = args;
+
+const REQUEST_TIMEOUT = 5000;
+
+if (!filePath || !filePath.trim()) {
+  log.error('Insufficient arguments given: A JSON file path should be passed as the first argument!');
+
+  console.log('How to use this command: ./bin/import-users "users.json"');
+
+  process.exit(1);
+}
+
+const targetPath = path.resolve(...filePath.split(path.sep));
+
+
+fs.readFile(targetPath, async (err, data) => {
+  if (err) {
+    throw err;
+  }
+  try {
+    const users = JSON.parse(data.toString());
+    const { createUserInKeyVault } = await createKeyVaultService();
+
+    const response = await Promise.all(createUsers(users, createUserInKeyVault));
+    const successes = numOfSuccessfulOps(response);
+    const failures = numOfFailedOps(response);
+
+    log.info(`The operation completed: ${successes.length} were added successfully and ${failures.length} failed`);
+
+    if (failures.length) {
+      log.info("The following users weren't imported");
+
+      console.log(JSON.stringify(failures, null, 2));
+    }
+  } catch (exp) {
+    log.error(exp);
+  }
+});
+
+
+function createUsers(users, createUserFn) {
+  return users.map(({ username, password }) => {
+    log.debug({ user: username }, 'Adding user to keyVault');
+    const promise = createUserFn(username, password);
+
+    return timeout(promise, REQUEST_TIMEOUT)
+      .then((secret) => {
+        log.debug({ user: username }, 'Successfully added to the keyVault');
+
+        return {
+          username,
+          secret,
+        };
+      })
+      .catch((err) => {
+        log.debug({ user: username }, 'Failed to add user to the keyVault');
+
+        if (err instanceof TimeoutError) {
+          log.debug({ user: username }, 'Failed due to a Timeout :-(');
+        }
+
+        log.error(err);
+
+        return {
+          username,
+          secret: null,
+        };
+      });
+  });
+}
+
+
+function numOfSuccessfulOps(opts) {
+  return opts.filter((el => el.secret !== null));
+}
+
+function numOfFailedOps(opts) {
+  return opts.filter((el => el.secret == null));
+}
