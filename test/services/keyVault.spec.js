@@ -4,7 +4,7 @@ const {
   createUserInKeyVault,
   checkUserInKeyVault,
   generatePasswordHash,
-} = require('../../server/services/authentication');
+} = require('../../server/services/keyVault');
 
 
 describe('Authentication', () => {

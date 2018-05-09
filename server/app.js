@@ -19,7 +19,7 @@ const createHealthRouter = require('./routes/health');
 
 const version = Date.now().toString();
 
-module.exports = function createApp({ storageService, appInfo, authenticationService }) {
+module.exports = function createApp({ storageService, appInfo, keyVaultService }) {
   const app = express();
 
   app.set('json spaces', 2);
@@ -125,7 +125,7 @@ module.exports = function createApp({ storageService, appInfo, authenticationSer
   }));
 
   // Routes
-  app.use('/', authenticationMiddleWare(authenticationService), createIndexRouter({ storageService }));
+  app.use('/', authenticationMiddleWare(keyVaultService), createIndexRouter({ storageService }));
 
   app.use('*', (req, res) => {
     res.status(404);

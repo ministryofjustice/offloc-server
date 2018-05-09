@@ -25,6 +25,7 @@ async function createKeyVaultService() {
   const client = new KeyVaultClient(credentials);
 
   return {
+    createUserInKeyVault: createUserInKeyVault(client),
     validateUser: checkUserInKeyVault(client),
   };
 }
