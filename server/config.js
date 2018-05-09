@@ -21,5 +21,4 @@ module.exports = {
   azureBlobStorageSubscriptionId: get('AZURE_STORAGE_SUBSCRIPTION_ID', 'your-key', { requireInProduction: true }),
   keyVaultUrl: get('KEY_VAULT_URL', 'your-key', { requireInProduction: true }),
   appSettingsWebsiteSiteName: get('APPSETTING_WEBSITE_SITE_NAME', null, { requireInProduction: true }),
-  skipAuth: get('SKIP_AUTHENTICATION', 'false') !== 'false',
 };
