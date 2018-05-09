@@ -134,7 +134,7 @@ describe('GET /', () => {
         .expect('Content-Type', /text\/html/)
         .expect(404)
         .then((response) => {
-          expect(response.text).to.include('The resource you are looking for could not be found.');
+          expect(response.text).to.include('could not be found.');
         }));
   });
 });
