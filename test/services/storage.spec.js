@@ -3,10 +3,10 @@ const azureStorage = require('azure-storage');
 const { Readable } = require('stream');
 
 const { createBlobServiceSuccess, createBlobServiceError } = require('../test-helpers');
-const fileService = require('../../server/services/file');
+const storageService = require('../../server/services/storage');
 const azureLocal = require('../../server/services/azure-local');
 
-describe('FileService', () => {
+describe('storageService', () => {
   let service;
   let azureLocalStub;
   let azureStub;
@@ -18,7 +18,7 @@ describe('FileService', () => {
         listKeys: sinon.stub().returns({ keys: [{ value: 'foo' }] }),
       },
     }));
-    service = fileService();
+    service = storageService();
   });
 
   after(() => {

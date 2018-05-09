@@ -90,14 +90,18 @@ const todaysFile = async () => {
   const blobService = await createBlobServiceClient();
   const blobName = todaysFileName();
 
+  logger.debug({ todaysFile: blobName }, 'Fetching todays file');
+
   return new Promise((resolve) => {
     blobService.doesBlobExist(config.azureBlobStorageContainerName, blobName, (error, result) => {
       if (error) logger.error(error);
 
       if (result && result.exists) {
+        logger.debug({ todaysFile: blobName }, 'Found today\'s file');
+
         return resolve(result);
       }
-
+      logger.debug({ todaysFile: blobName }, 'Today\'s file not found');
       return resolve(null);
     });
   });
@@ -107,12 +111,14 @@ const downloadFile = async (blobName) => {
   const blobService = await createBlobServiceClient();
   const downloadOptions = { useTransactionalMD5: true, parallelOperationThreadCount: 5 };
 
+  logger.debug({ file: blobName }, 'Downloading file');
+
   return blobService
     .createReadStream(config.azureBlobStorageContainerName, blobName, downloadOptions);
 };
 
 
-module.exports = function fileService() {
+module.exports = function storageService() {
   return {
     downloadFile,
     todaysFile,

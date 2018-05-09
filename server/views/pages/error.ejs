@@ -8,10 +8,14 @@
 
     <% include ../partials/header %>
 
-    <main class="app-container">
-      <h1 class="heading-large"><%= message %></h1>
-      <h2 class="heading-medium"><%= error.status %></h2>
-      <pre><%= error.stack %></pre>
+    <main id="content" class="app-container" role="main">
+      <div class="grid-row">
+        <div class="column-two-thirds">
+          <h1 class="heading-large"><%= message %></h1>
+          <h2 class="heading-medium"><%= error.status %></h2>
+          <pre><%= error.stack %></pre>
+        </div>
+      </div>
     </main>
 
     <% include ../partials/footer %>
