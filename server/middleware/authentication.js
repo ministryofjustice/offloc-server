@@ -1,6 +1,5 @@
 
 const basicAuth = require('basic-auth');
-const config = require('../config');
 const logger = require('../loggers/logger.js');
 
 module.exports = function authenticationMiddleWare(authenticationService) {
@@ -9,14 +8,6 @@ module.exports = function authenticationMiddleWare(authenticationService) {
 
     if (!auth || !auth.name || !auth.pass) {
       req.log.info('No auth details included');
-      return unauthorized(res);
-    }
-
-    if (config.skipAuth) {
-      const lengthGreaterThan3 = val => (/.{3,}/.test(val));
-      if (lengthGreaterThan3(auth.name) && lengthGreaterThan3(auth.pass)) {
-        return next();
-      }
       return unauthorized(res);
     }
 
