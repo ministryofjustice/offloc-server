@@ -9,7 +9,6 @@ const { createVaultCredentials } = require('./azure-local');
 
 const keyVaultUri = config.keyVaultUrl;
 
-
 function getKeyVaultCredentials() {
   if (config.appSettingsWebsiteSiteName) {
     return msRestAzure.loginWithAppServiceMSI({
@@ -25,6 +24,7 @@ async function createKeyVaultService() {
   const client = new KeyVaultClient(credentials);
 
   return {
+    updateUserPassword: updateUserPassword(client),
     createUserInKeyVault: createUserInKeyVault(client),
     validateUser: checkUserInKeyVault(client),
   };
@@ -76,7 +76,29 @@ function checkUserInKeyVault(client) {
   };
 }
 
+function updateUserPassword(client) {
+  return async (username, { currentPassword, newPassword }) => {
+    const checkUser = checkUserInKeyVault(client);
+    const credentialsValid = await checkUser(username, currentPassword);
+
+    if (!credentialsValid) {
+      return {
+        ok: false,
+        errors: [{ type: 'credentialsInvalid', value: 'There was a problem authenticating this request. Please check that you\'ve entered all details correctly' }],
+      };
+    }
+
+    const updateUser = createUserInKeyVault(client);
+
+    await updateUser(username, newPassword);
+
+    return { ok: true, errors: [] };
+  };
+}
+
+
 module.exports = {
+  updateUserPassword,
   createKeyVaultService,
   generatePasswordHash,
   createUserInKeyVault,
