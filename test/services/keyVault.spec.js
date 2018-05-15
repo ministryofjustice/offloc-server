@@ -4,6 +4,7 @@ const {
   createUserInKeyVault,
   checkUserInKeyVault,
   generatePasswordHash,
+  updateUserPassword,
 } = require('../../server/services/keyVault');
 
 
@@ -24,33 +25,74 @@ describe('Authentication', () => {
       expect(passwordMatch).to.equal(true);
     });
 
-    it('returns true when authentication passes', async () => {
-      const hashedPassword = await generatePasswordHash('foo-password');
-      const client = {
-        getSecret: sinon.stub().resolves({ value: hashedPassword }),
-      };
-      const checkUser = checkUserInKeyVault(client);
+    describe('.checkUserInKeyVault', () => {
+      it('returns true when authentication passes', async () => {
+        const hashedPassword = await generatePasswordHash('foo-password');
+        const client = {
+          getSecret: sinon.stub().resolves({ value: hashedPassword }),
+        };
+        const checkUser = checkUserInKeyVault(client);
 
-      const username = 'foo';
-      const password = 'foo-password';
+        const username = 'foo';
+        const password = 'foo-password';
 
-      const exists = await checkUser(username, password);
+        const exists = await checkUser(username, password);
 
-      expect(exists).to.equal(true);
+        expect(exists).to.equal(true);
+      });
+
+      it('returns false when there is an error with authentication', async () => {
+        const client = {
+          getSecret: sinon.stub().rejects({ status: 404 }),
+        };
+        const checkUser = checkUserInKeyVault(client);
+
+        const username = 'foo';
+        const password = 'foo-password';
+
+        const exists = await checkUser(username, password);
+
+        expect(exists).to.equal(false);
+      });
     });
 
-    it('returns false when there is an error with authentication', async () => {
-      const client = {
-        getSecret: sinon.stub().rejects({ status: 404 }),
-      };
-      const checkUser = checkUserInKeyVault(client);
+    describe('.updateUserPassword', () => {
+      it('updates a users password', async () => {
+        const username = 'foo';
+        const currentPassword = 'foo-password';
+        const newPassword = 'new-password';
+        const hashedPassword = await generatePasswordHash(currentPassword);
 
-      const username = 'foo';
-      const password = 'foo-password';
+        const client = {
+          setSecret: sinon.stub().resolves(true),
+          getSecret: sinon.stub().resolves({ value: hashedPassword }),
+        };
 
-      const exists = await checkUser(username, password);
+        const updatePassword = updateUserPassword(client);
 
-      expect(exists).to.equal(false);
+        const result = await updatePassword(username, { currentPassword, newPassword });
+
+        expect(result.ok).to.equal(true);
+        expect(result.errors.length).to.equal(0);
+      });
+
+      it('does not update the password when the user does not exist', async () => {
+        const username = 'foo';
+        const currentPassword = 'foo-password';
+        const newPassword = 'new-password';
+
+        const client = {
+          setSecret: sinon.stub().resolves(true),
+          getSecret: sinon.stub().rejects({ status: 404 }),
+        };
+
+        const updatePassword = updateUserPassword(client);
+
+        const result = await updatePassword(username, { currentPassword, newPassword });
+
+        expect(result.ok).to.equal(false);
+        expect(result.errors.length).to.equal(1);
+      });
     });
   });
 });
