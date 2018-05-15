@@ -1,133 +1,175 @@
 const request = require('supertest');
-const express = require('express');
-const path = require('path');
-const createChangePasswordRouter = require('../../server/routes/index');
+const jsdom = require('jsdom');
 
+const { setupBasicApp } = require('../test-helpers');
+const createChangePasswordRouter = require('../../server/routes/changePassword');
 
-const router = createChangePasswordRouter({ storageService: storageService() });
+const { JSDOM } = jsdom;
 
-const app = express();
-app.set('views', path.join(__dirname, '../../server/views'));
-app.set('view engine', 'ejs');
-app.use((req, res, next) => {
-  res.locals.version = 'foo';
-  next();
-});
-app.use(router);
+const successService = {
+  keyVaultService: {
+    createKeyVaultService: sinon.stub().resolves({
+      updateUserPassword: sinon.stub().resolves({ ok: true, errors: [] }),
+    }),
+  },
+  passwordValidationService: {
+    validateInput: sinon.stub().returns({ ok: true, errors: [] }),
+  },
+};
 
-describe('GET /', () => {
-  const entry = {
-    name: '20180418.zip',
-    lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
-    exists: true,
-  };
-  let azureLocalStub;
-  let azureStub;
+const passwordErrorService = {
+  keyVaultService: {
+    createKeyVaultService: sinon.stub().resolves({
+      updateUserPassword: sinon.stub().resolves({ ok: true, errors: [] }),
+    }),
+  },
+  passwordValidationService: {
+    validateInput: sinon.stub().returns({ ok: false, errors: [{ type: 'bar', value: 'bar-error' }] }),
+  },
+};
 
-  before(() => {
-    azureLocalStub = sinon.stub(azureLocal, 'createBlobStorageCredentials').returns(null);
-    azureStub = sinon.stub(azure, 'createStorageManagementClient').callsFake(() => ({
-      storageAccounts: {
-        listKeys: sinon.stub().returns({ keys: [{ value: 'foo' }] }),
-      },
-    }));
-  });
+const updateUserPasswordErrorService = {
+  keyVaultService: {
+    createKeyVaultService: sinon.stub().resolves({
+      updateUserPassword: sinon.stub().resolves({ ok: false, errors: [{ type: 'foo', value: 'foo-error' }] }),
+    }),
+  },
+  passwordValidationService: {
+    validateInput: sinon.stub().returns({ ok: true, errors: [] }),
+  },
+};
 
-  after(() => {
-    azureLocalStub.restore();
-    azureStub.restore();
-  });
+describe('/change-password', () => {
+  describe('#GET', () => {
+    it('responds with a 200', () => {
+      const router = createChangePasswordRouter(successService);
+      const app = setupBasicApp();
 
-  describe('when there is a file available for download', () => {
-    let stub;
+      app.use(router);
 
-    beforeEach(() => {
-      const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
-
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('respond with a page displaying a file to download', () =>
-      request(app)
+      return request(app)
         .get('/')
         .expect('Content-Type', /text\/html/)
         .expect(200)
         .then((response) => {
-          expect(response.text).to.include('<td>20180418.zip</td>');
-        }));
+          expect(response.text).to.include('<h1 class="heading-large">Change Password</h1>');
+        });
+    });
   });
 
-  describe('when there isn\'t file available for download', () => {
-    let stub;
+  describe('#POST', () => {
+    let cookies;
+    let token;
 
-    beforeEach(() => {
-      const blobService = createBlobServiceError();
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
+    describe('when a valid form is submitted', () => {
+      let app;
+      before(() => {
+        app = setupBasicApp();
+
+        app.use('/change-password', createChangePasswordRouter(successService));
+
+        return request(app)
+          .get('/change-password')
+          .then((response) => {
+            cookies = response.headers['set-cookie'];
+
+            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
+            token = dom.window.document.getElementsByName('_csrf')[0].value;
+          });
+      });
+
+      it('updates the users password', () => {
+        const securePassword = 'bFvS966G0IQHpPya';
+
+        return request(app)
+          .post('/change-password')
+          .type('form')
+          .set('Cookie', cookies)
+          .send({
+            _csrf: token,
+            currentPassword: 'foobar',
+            newPassword: securePassword,
+            confirmPassword: securePassword,
+          })
+          .expect(301)
+          .then((response) => {
+            expect(response.header.location).to.equal('/change-password/confirmation');
+          });
+      });
     });
 
-    afterEach(() => {
-      stub.restore();
+    describe('when an invalid new password is submitted', () => {
+      let app;
+      before(() => {
+        app = setupBasicApp();
+
+        app.use('/change-password', createChangePasswordRouter(passwordErrorService));
+
+        return request(app)
+          .get('/change-password')
+          .then((response) => {
+            cookies = response.headers['set-cookie'];
+
+            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
+            token = dom.window.document.getElementsByName('_csrf')[0].value;
+          });
+      });
+
+      it('notifies the user with an error', () => {
+        const insecurePassword = '123456';
+
+        return request(app)
+          .post('/change-password')
+          .type('form')
+          .set('Cookie', cookies)
+          .send({
+            _csrf: token,
+            currentPassword: 'foobar',
+            newPassword: insecurePassword,
+            confirmPassword: insecurePassword,
+          })
+          .expect(422)
+          .then((response) => {
+            expect(response.text).to.include('class="error-summary"');
+          });
+      });
     });
 
-    it('respond with a page displaying the corresponding message', () =>
-      request(app)
-        .get('/')
-        .expect('Content-Type', /text\/html/)
-        .expect(200)
-        .then((response) => {
-          expect(response.text).to.include('No files found for download.');
-        }));
-  });
+    describe('when the user current password is invalid', () => {
+      let app;
+      before(() => {
+        app = setupBasicApp();
 
-  describe('Successful download request', () => {
-    let stub;
+        app.use('/change-password', createChangePasswordRouter(updateUserPasswordErrorService));
 
-    beforeEach(() => {
-      const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
+        return request(app)
+          .get('/change-password')
+          .then((response) => {
+            cookies = response.headers['set-cookie'];
+
+            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
+            token = dom.window.document.getElementsByName('_csrf')[0].value;
+          });
+      });
+
+      it('notifies the user with an error', () => {
+        const securePassword = 'bFvS966G0IQHpPya';
+
+        return request(app)
+          .post('/change-password')
+          .type('form')
+          .set('Cookie', cookies)
+          .send({
+            _csrf: token,
+            currentPassword: 'invalidPassword',
+            newPassword: securePassword,
+            confirmPassword: securePassword,
+          })
+          .expect(401)
+          .then((response) => {
+            expect(response.text).to.include('class="error-summary"');
+          });
+      });
     });
-
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('downloads the latest file available', () =>
-      request(app)
-        .get('/20180418.zip')
-        .expect('Content-Type', /zip/)
-        .expect(200)
-        .buffer()
-        .parse(binaryParser)
-        .then((response) => {
-          const contents = new AdmZip(response.body);
-          const zipContents = contents.getEntries();
-          expect(zipContents.length).to.equal(1);
-          expect(zipContents[0].entryName).to.equal('report.csv');
-        }));
-  });
-
-  describe('Unsuccessful download request', () => {
-    let stub;
-
-    beforeEach(() => {
-      const blobService = createBlobServiceError();
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
-
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('returns a 404 when an error occurs with the download', () =>
-      request(app)
-        .get('/20180418.zip')
-        .expect('Content-Type', /text\/html/)
-        .expect(404)
-        .then((response) => {
-          expect(response.text).to.include('could not be found.');
-        }));
   });
 });

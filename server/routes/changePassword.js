@@ -30,13 +30,12 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
           },
         });
       }
-
       const service = await keyVaultService.createKeyVaultService();
       const result = await service.updateUserPassword(res.locals.user, req.body);
 
       if (!result.ok) {
         logger.info({ user: res.locals.user }, 'Invalid credentials');
-        res.status(422);
+        res.status(401);
         return res.render('pages/changePassword', {
           csrfToken: req.csrfToken(),
           errors: {
@@ -46,10 +45,14 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
         });
       }
 
-      return res.render('pages/confirmation', { headline: 'Your password was successfully updated' });
+      return res.redirect(301, '/change-password/confirmation');
     } catch (error) {
       return next(error);
     }
+  });
+
+  router.get('/confirmation', (req, res) => {
+    res.render('pages/confirmation', { headline: 'Your password was successfully updated' });
   });
 
   return router;

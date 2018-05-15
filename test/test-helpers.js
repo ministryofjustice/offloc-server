@@ -1,6 +1,10 @@
 const fs = require('fs');
 const { Readable } = require('stream');
 const path = require('path');
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const csurf = require('csurf');
+const bodyParser = require('body-parser');
 
 function binaryParser(res, callback) {
   res.setEncoding('binary');
@@ -31,8 +35,29 @@ function createBlobServiceError() {
   });
 }
 
+function setupBasicApp() {
+  const app = express();
+  app.set('views', path.join(__dirname, '../server/views'));
+  app.set('view engine', 'ejs');
+
+  // Body parser
+  app.use(bodyParser.urlencoded({ extended: true }));
+  // Cookie parser
+  app.use(cookieParser());
+  // CSRF protection
+  app.use(csurf({ cookie: true }));
+
+  app.use((req, res, next) => {
+    res.locals.user = 'foo';
+    res.locals.version = 'foo';
+    next();
+  });
+  return app;
+}
+
 
 module.exports = {
+  setupBasicApp,
   binaryParser,
   createBlobServiceSuccess,
   createBlobServiceError,
