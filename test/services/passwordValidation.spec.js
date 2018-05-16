@@ -20,7 +20,7 @@ describe('passwordValidationService', () => {
       expect(validation.errors[0].type).to.equal('passwordMismatch');
     });
 
-    it('fails validation when the password length is less than 16', () => {
+    it('fails validation when the password length is less than 16 characters', () => {
       const newPassword = 'shortPassword1';
       const confirmPassword = 'shortPassword1';
       const validation = validateInput({ newPassword, confirmPassword });
@@ -29,40 +29,13 @@ describe('passwordValidationService', () => {
       expect(validation.errors[0].type).to.equal('min');
     });
 
-    it('fails validation when the password does not contain an uppercase letter', () => {
-      const newPassword = 'passwordwithnouppercase1';
-      const confirmPassword = 'passwordwithnouppercase1';
+    it('fails validation when the password length is greater than 100 characters', () => {
+      const newPassword = 'sf67LP1FhEGJoabj5uQYGB6Xi1lxZG8SGK5OpZoApJ1pU1r0UjiXdUc9Yq0O7a0C4L1Qpk5PIWXAy7bMx0QPV0EP3OLfMyK83R0UA';
+      const confirmPassword = 'sf67LP1FhEGJoabj5uQYGB6Xi1lxZG8SGK5OpZoApJ1pU1r0UjiXdUc9Yq0O7a0C4L1Qpk5PIWXAy7bMx0QPV0EP3OLfMyK83R0UA';
       const validation = validateInput({ newPassword, confirmPassword });
       expect(validation.ok).to.equal(false);
       expect(validation.errors.length).to.equal(1);
-      expect(validation.errors[0].type).to.equal('uppercase');
-    });
-
-    it('fails validation when the password does not contain a number', () => {
-      const newPassword = 'passwordWithNoNumber';
-      const confirmPassword = 'passwordWithNoNumber';
-      const validation = validateInput({ newPassword, confirmPassword });
-      expect(validation.ok).to.equal(false);
-      expect(validation.errors.length).to.equal(1);
-      expect(validation.errors[0].type).to.equal('digits');
-    });
-
-    it('fails validation when the password does contains spaces', () => {
-      const newPassword = 'password with Spaces 1';
-      const confirmPassword = 'password with Spaces 1';
-      const validation = validateInput({ newPassword, confirmPassword });
-      expect(validation.ok).to.equal(false);
-      expect(validation.errors.length).to.equal(1);
-      expect(validation.errors[0].type).to.equal('spaces');
-    });
-
-    it('fails validation when the password does contains a lowercase letter', () => {
-      const newPassword = 'PASSWORDWITHNOLOWERCASE1';
-      const confirmPassword = 'PASSWORDWITHNOLOWERCASE1';
-      const validation = validateInput({ newPassword, confirmPassword });
-      expect(validation.ok).to.equal(false);
-      expect(validation.errors.length).to.equal(1);
-      expect(validation.errors[0].type).to.equal('lowercase');
+      expect(validation.errors[0].type).to.equal('max');
     });
 
     it('returns multiple errors on an invalid password', () => {
@@ -70,7 +43,7 @@ describe('passwordValidationService', () => {
       const confirmPassword = 'passwor';
       const validation = validateInput({ newPassword, confirmPassword });
       expect(validation.ok).to.equal(false);
-      expect(validation.errors.length).to.equal(4);
+      expect(validation.errors.length).to.equal(2);
     });
   });
 });

@@ -21,7 +21,7 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
 
       if (!passwordCheck.ok) {
         logger.info(passwordCheck.errors, 'password requirements unmet');
-        res.status(422);
+        res.status(400);
         return res.render('pages/changePassword', {
           csrfToken: req.csrfToken(),
           errors: {
@@ -45,7 +45,7 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
         });
       }
 
-      return res.redirect(301, '/change-password/confirmation');
+      return res.redirect(302, '/change-password/confirmation');
     } catch (error) {
       return next(error);
     }

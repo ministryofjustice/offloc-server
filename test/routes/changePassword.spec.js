@@ -91,7 +91,7 @@ describe('/change-password', () => {
             newPassword: securePassword,
             confirmPassword: securePassword,
           })
-          .expect(301)
+          .expect(302)
           .then((response) => {
             expect(response.header.location).to.equal('/change-password/confirmation');
           });
@@ -128,7 +128,7 @@ describe('/change-password', () => {
             newPassword: insecurePassword,
             confirmPassword: insecurePassword,
           })
-          .expect(422)
+          .expect(400)
           .then((response) => {
             expect(response.text).to.include('class="error-summary"');
           });
