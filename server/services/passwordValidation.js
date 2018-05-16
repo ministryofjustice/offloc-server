@@ -20,7 +20,11 @@ function validateInput({ newPassword, confirmPassword }) {
     errors.push({ type: 'max', value: errorMessages.max });
   }
 
-  return { errors, ok: errors.length === 0 };
+  if (errors.length) {
+    return { errors, ok: false, data: null };
+  }
+
+  return { errors: [], ok: true, data: newPassword };
 }
 
 

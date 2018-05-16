@@ -9,6 +9,7 @@ describe('passwordValidationService', () => {
       const validation = validateInput({ newPassword, confirmPassword });
       expect(validation.ok).to.equal(true);
       expect(validation.errors.length).to.equal(0);
+      expect(validation.data).to.equal(newPassword);
     });
 
     it('fails validation when the input password don\'t match', () => {
@@ -18,6 +19,7 @@ describe('passwordValidationService', () => {
       expect(validation.ok).to.equal(false);
       expect(validation.errors.length).to.equal(1);
       expect(validation.errors[0].type).to.equal('passwordMismatch');
+      expect(validation.data).to.equal(null);
     });
 
     it('fails validation when the password length is less than 16 characters', () => {
@@ -27,6 +29,7 @@ describe('passwordValidationService', () => {
       expect(validation.ok).to.equal(false);
       expect(validation.errors.length).to.equal(1);
       expect(validation.errors[0].type).to.equal('min');
+      expect(validation.data).to.equal(null);
     });
 
     it('fails validation when the password length is greater than 100 characters', () => {
@@ -36,6 +39,7 @@ describe('passwordValidationService', () => {
       expect(validation.ok).to.equal(false);
       expect(validation.errors.length).to.equal(1);
       expect(validation.errors[0].type).to.equal('max');
+      expect(validation.data).to.equal(null);
     });
 
     it('returns multiple errors on an invalid password', () => {
@@ -44,6 +48,7 @@ describe('passwordValidationService', () => {
       const validation = validateInput({ newPassword, confirmPassword });
       expect(validation.ok).to.equal(false);
       expect(validation.errors.length).to.equal(2);
+      expect(validation.data).to.equal(null);
     });
   });
 });
