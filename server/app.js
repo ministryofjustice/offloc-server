@@ -3,6 +3,7 @@ const addRequestId = require('express-request-id')();
 const helmet = require('helmet');
 const hsts = require('hsts');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const csurf = require('csurf');
 const compression = require('compression');
 const sassMiddleware = require('node-sass-middleware');
@@ -16,10 +17,16 @@ const authenticationMiddleWare = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
+const createChangePasswordRouter = require('./routes/changePassword');
 
 const version = Date.now().toString();
 
-module.exports = function createApp({ storageService, appInfo, keyVaultService }) {
+module.exports = function createApp({
+  storageService,
+  appInfo,
+  keyVaultService,
+  passwordValidationService,
+}) {
   const app = express();
 
   app.set('json spaces', 2);
@@ -113,6 +120,9 @@ module.exports = function createApp({ storageService, appInfo, keyVaultService }
     app.use('/public/images/icons', express.static(path.join(__dirname, dir), cacheControl));
   });
 
+  // Body parser
+  app.use(bodyParser.urlencoded({ extended: true }));
+
   // Cookie parser
   app.use(cookieParser());
 
@@ -126,6 +136,7 @@ module.exports = function createApp({ storageService, appInfo, keyVaultService }
 
   // Routes
   app.use('/', authenticationMiddleWare(keyVaultService), createIndexRouter({ storageService }));
+  app.use('/change-password', authenticationMiddleWare(keyVaultService), createChangePasswordRouter({ keyVaultService, passwordValidationService }));
 
   app.use('*', (req, res) => {
     res.status(404);

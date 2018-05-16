@@ -15,7 +15,10 @@ module.exports = function authenticationMiddleWare(authenticationService) {
       const service = await authenticationService.createKeyVaultService();
       const userValid = await service.validateUser(auth.name, auth.pass);
 
-      if (userValid) return next();
+      if (userValid) {
+        res.locals.user = auth.name;
+        return next();
+      }
     } catch (expectation) {
       logger.error(expectation);
       return unauthorized(res);

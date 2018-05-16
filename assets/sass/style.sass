@@ -11,3 +11,48 @@ $path: "/public/images/"
 
 #global-header #logo .logo-img
   margin-right: 10px
+
+#global-header .header-wrapper
+  position: relative
+
+#header-user
+  position: absolute
+  top: 0
+  right: 0
+  height: 56px
+  color: #fff
+  background-color: #005ea5
+  padding: 15px
+  box-sizing: border-box
+  width: 160px
+  text-align: center
+  text-transform: capitalize
+
+#header-user a
+  color: #ffffff
+
+.navigation-menu
+  list-style: none
+  position: absolute
+  top: 100%
+  left: 0
+  width: 100%
+  background-color: #005ea5
+  display: none
+
+.navigation-menu li a
+  display: block
+  padding: 1em 0
+
+.navigation-menu li a:hover
+  background-color: #ffbf47
+
+#header-user:hover .navigation-menu
+  display: block
+
+.error-summary-list
+  list-style: none
+
+// Utility classes
+.u-no-margin-bottom
+  margin-bottom: 0
