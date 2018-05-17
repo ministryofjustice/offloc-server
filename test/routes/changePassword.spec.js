@@ -3,29 +3,28 @@ const jsdom = require('jsdom');
 
 const { setupBasicApp } = require('../test-helpers');
 const createChangePasswordRouter = require('../../server/routes/changePassword');
+const passwordValidationService = require('../../server/services/passwordValidation');
 
 const { JSDOM } = jsdom;
+
+const updateUserPasswordStub = sinon.stub().resolves({ ok: true, errors: [] });
 
 const successService = {
   keyVaultService: {
     createKeyVaultService: sinon.stub().resolves({
-      updateUserPassword: sinon.stub().resolves({ ok: true, errors: [] }),
+      updateUserPassword: updateUserPasswordStub,
     }),
   },
-  passwordValidationService: {
-    validateInput: sinon.stub().returns({ ok: true, errors: [] }),
-  },
+  passwordValidationService,
 };
 
 const passwordErrorService = {
   keyVaultService: {
     createKeyVaultService: sinon.stub().resolves({
-      updateUserPassword: sinon.stub().resolves({ ok: true, errors: [] }),
+      updateUserPassword: updateUserPasswordStub,
     }),
   },
-  passwordValidationService: {
-    validateInput: sinon.stub().returns({ ok: false, errors: [{ type: 'bar', value: 'bar-error' }] }),
-  },
+  passwordValidationService,
 };
 
 const updateUserPasswordErrorService = {
@@ -34,9 +33,7 @@ const updateUserPasswordErrorService = {
       updateUserPassword: sinon.stub().resolves({ ok: false, errors: [{ type: 'foo', value: 'foo-error' }] }),
     }),
   },
-  passwordValidationService: {
-    validateInput: sinon.stub().returns({ ok: true, errors: [] }),
-  },
+  passwordValidationService,
 };
 
 describe('/change-password', () => {
@@ -93,6 +90,8 @@ describe('/change-password', () => {
           })
           .expect(302)
           .then((response) => {
+            expect(updateUserPasswordStub.lastCall.args[0]).to.equal('foo');
+            expect(updateUserPasswordStub.lastCall.args[1]).to.eql({ currentPassword: 'foobar', newPassword: securePassword });
             expect(response.header.location).to.equal('/change-password/confirmation');
           });
       });
