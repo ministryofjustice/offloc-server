@@ -8,11 +8,11 @@
               </a>
           </div>
       </div>
-      <div id="header-user">
-        <strong><%= locals.user %></strong>
-        <ul class="navigation-menu">
-          <li><a href="/change-password">Change password</a></li>
-        </ul>
+      <% if (locals.user) { %>
+      <div class="header-user">
+        <strong class="header-username"><%= locals.user %></strong>
+        <a href="/change-password">Change password</a>
       </div>
+      <% } %>
   </div>
 </header>
