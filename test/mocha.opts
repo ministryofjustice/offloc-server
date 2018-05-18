@@ -1,5 +1,5 @@
 --require ./test/.setup.js
+--recursive
 --reporter spec
 --colors
---bail
 --timeout 25000
