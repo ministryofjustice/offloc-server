@@ -1,11 +1,9 @@
 const request = require('supertest');
-const jsdom = require('jsdom');
+const cheerio = require('cheerio');
 
 const { setupBasicApp } = require('../test-helpers');
 const createChangePasswordRouter = require('../../server/routes/changePassword');
 const passwordValidationService = require('../../server/services/passwordValidation');
-
-const { JSDOM } = jsdom;
 
 const updateUserPasswordStub = sinon.stub().resolves({ ok: true, errors: [] });
 
@@ -49,7 +47,8 @@ describe('/change-password', () => {
         .expect('Content-Type', /text\/html/)
         .expect(200)
         .then((response) => {
-          expect(response.text).to.include('<h1 class="heading-large">Change Password</h1>');
+          const $ = cheerio.load(response.text);
+          expect($('h1.heading-large').text()).to.eql('Change Password');
         });
     });
   });
@@ -57,6 +56,11 @@ describe('/change-password', () => {
   describe('#POST', () => {
     let cookies;
     let token;
+    function recordCSRF(response) {
+      cookies = response.headers['set-cookie'];
+      const $ = cheerio.load(response.text);
+      token = $('[name=_csrf]').val();
+    }
 
     describe('when a valid form is submitted', () => {
       let app;
@@ -67,12 +71,7 @@ describe('/change-password', () => {
 
         return request(app)
           .get('/change-password')
-          .then((response) => {
-            cookies = response.headers['set-cookie'];
-
-            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
-            token = dom.window.document.getElementsByName('_csrf')[0].value;
-          });
+          .then(recordCSRF);
       });
 
       it('updates the users password', () => {
@@ -106,12 +105,7 @@ describe('/change-password', () => {
 
         return request(app)
           .get('/change-password')
-          .then((response) => {
-            cookies = response.headers['set-cookie'];
-
-            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
-            token = dom.window.document.getElementsByName('_csrf')[0].value;
-          });
+          .then(recordCSRF);
       });
 
       it('notifies the user with an error', () => {
@@ -143,12 +137,7 @@ describe('/change-password', () => {
 
         return request(app)
           .get('/change-password')
-          .then((response) => {
-            cookies = response.headers['set-cookie'];
-
-            const dom = new JSDOM(response.text, { runScripts: 'outside-only' });
-            token = dom.window.document.getElementsByName('_csrf')[0].value;
-          });
+          .then(recordCSRF);
       });
 
       it('notifies the user with an error', () => {

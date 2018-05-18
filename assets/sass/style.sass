@@ -15,20 +15,27 @@ $path: "/public/images/"
 #global-header .header-wrapper
   position: relative
 
-#header-user
+.header-user
   position: absolute
   top: 0
   right: 0
-  height: 56px
   color: #fff
   background-color: #005ea5
-  padding: 15px
+  padding: 0 25px
+  line-height: 56px
   box-sizing: border-box
-  width: 160px
   text-align: center
   text-transform: capitalize
 
-#header-user a
+.header-username
+  line-height: inherit
+
+.header-username::after
+  content: " "
+  border-left: 2px solid white
+  margin: 0 25px
+
+.header-user a:link
   color: #ffffff
 
 .navigation-menu

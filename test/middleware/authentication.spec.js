@@ -1,6 +1,6 @@
 const request = require('supertest');
-const express = require('express');
 
+const { setupBasicApp } = require('../test-helpers');
 const authenticationMiddleWare = require('../../server/middleware/authentication');
 
 const simpleRoute = (req, res) => {
@@ -16,7 +16,7 @@ describe('AuthenticationMiddleware', () => {
           validateUser: validateUserStub,
         }),
       };
-      const app = express();
+      const app = setupBasicApp();
       app.get('/', authenticationMiddleWare(authService), simpleRoute);
 
       return request(app)
@@ -34,7 +34,7 @@ describe('AuthenticationMiddleware', () => {
           validateUser: sinon.stub().returns(false),
         }),
       };
-      const app = express();
+      const app = setupBasicApp();
 
       app.get('/', authenticationMiddleWare(authService), simpleRoute);
 

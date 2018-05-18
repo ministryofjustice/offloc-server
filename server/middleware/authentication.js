@@ -30,5 +30,6 @@ module.exports = function authenticationMiddleWare(authenticationService) {
 
 function unauthorized(res) {
   res.set('WWW-Authenticate', 'Basic realm=Password Required');
-  return res.sendStatus(401);
+  res.status(401);
+  res.render('pages/denied');
 }
