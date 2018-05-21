@@ -1,16 +1,9 @@
 const { KeyVaultCredentials } = require('azure-keyvault');
 const { exec } = require('child_process');
+const { isExpired } = require('../../utils/index');
 
 let blobStorageCache = null;
 let keyVaultCache = null;
-
-function tokenExpired(tokenExpiryTime) {
-  const expiryTime = new Date(tokenExpiryTime);
-  const currentTime = new Date();
-  const diff = currentTime - expiryTime;
-
-  return diff >= 0;
-}
 
 function createSignedRequest(data) {
   return {
@@ -29,7 +22,7 @@ function createVaultCredentials() {
 }
 
 function authenticator(challenge, callback) {
-  if (keyVaultCache && !tokenExpired(keyVaultCache.expiresOn)) {
+  if (keyVaultCache && !isExpired(keyVaultCache.expiresOn)) {
     return callback(null, `${keyVaultCache.tokenType} ${keyVaultCache.accessToken}`);
   }
 
@@ -53,7 +46,7 @@ function createBlobStorageCredentials(subscriptionId) {
 
 function getBlobStorageCredentials(subscriptionId) {
   return new Promise((resolve, reject) => {
-    if (blobStorageCache && !tokenExpired(blobStorageCache.expiresOn)) {
+    if (blobStorageCache && !isExpired(blobStorageCache.expiresOn)) {
       return resolve(createSignedRequest(blobStorageCache));
     }
 

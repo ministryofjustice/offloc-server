@@ -1,8 +1,10 @@
 
 const basicAuth = require('basic-auth');
 const logger = require('../loggers/logger.js');
+const { isExpired } = require('../../utils/index');
 
-module.exports = function authenticationMiddleWare(authenticationService) {
+
+function authenticationMiddleWare(authenticationService) {
   return async function requireAuthentication(req, res, next) {
     const auth = basicAuth(req);
 
@@ -13,9 +15,12 @@ module.exports = function authenticationMiddleWare(authenticationService) {
 
     try {
       const service = await authenticationService.createKeyVaultService();
-      const userValid = await service.validateUser(auth.name, auth.pass);
+      const user = await service.validateUser(auth.name, auth.pass);
 
-      if (userValid) {
+      if (user.ok) {
+        if (isExpired(user.data.expires)) {
+          res.locals.passwordExpired = true;
+        }
         res.locals.user = auth.name;
         return next();
       }
@@ -26,10 +31,31 @@ module.exports = function authenticationMiddleWare(authenticationService) {
 
     return unauthorized(res);
   };
-};
+}
+
+
+function passwordExpiredMiddleWare(req, res, next) {
+  if (res.locals.passwordExpired) {
+    res.render('pages/changePassword', {
+      csrfToken: req.csrfToken(),
+      errors: {
+        type: null,
+        list: null,
+      },
+    });
+  } else {
+    next();
+  }
+}
 
 function unauthorized(res) {
   res.set('WWW-Authenticate', 'Basic realm=Password Required');
   res.status(401);
   res.render('pages/denied');
 }
+
+
+module.exports = {
+  passwordExpiredMiddleWare,
+  authenticationMiddleWare,
+};

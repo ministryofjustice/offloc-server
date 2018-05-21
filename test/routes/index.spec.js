@@ -1,25 +1,22 @@
 const request = require('supertest');
-const express = require('express');
-const path = require('path');
 const AdmZip = require('adm-zip');
 const azure = require('azure');
 const azureStorage = require('azure-storage');
 
 const createIndexRouter = require('../../server/routes/index');
-const { createBlobServiceSuccess, createBlobServiceError, binaryParser } = require('../test-helpers');
+const {
+  createBlobServiceSuccess,
+  createBlobServiceError,
+  binaryParser,
+  setupBasicApp,
+} = require('../test-helpers');
 const storageService = require('../../server/services/storage');
 const azureLocal = require('../../server/services/azure-local');
 
 
 const router = createIndexRouter({ storageService: storageService() });
 
-const app = express();
-app.set('views', path.join(__dirname, '../../server/views'));
-app.set('view engine', 'ejs');
-app.use((req, res, next) => {
-  res.locals.version = 'foo';
-  next();
-});
+const app = setupBasicApp();
 app.use(router);
 
 describe('GET /', () => {
