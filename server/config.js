@@ -13,8 +13,8 @@ function get(name, fallback, options = {}) {
 module.exports = {
   dev: !production,
   port: get('PORT', 3000, { requireInProduction: true }),
-  staticResourceCacheDuration: production ? 864000000 : 0,
-  passwordExpirationDuration: get('AZURE_KEYVAULT_PASSWORD_EXPIRATION', 7.776e+6), // 90 days in seconds,
+  staticResourceCacheDuration: production ? 24 * 3600 * 1000 : 0, // 24 hours
+  passwordExpirationDuration: get('PASSWORD_EXPIRATION_MS', 90 * 24 * 3600 * 1000), // 90 days
   appInsightsKey: get('APPINSIGHTS_INSTRUMENTATIONKEY', 'your-app-insights-key', { requireInProduction: true }),
   azureBlobStorageContainerName: get('AZURE_STORAGE_CONTAINER_NAME', 'cde'),
   azureBlobStorageAccountName: get('AZURE_STORAGE_ACCOUNT_NAME', 'your-account-name', { requireInProduction: true }),

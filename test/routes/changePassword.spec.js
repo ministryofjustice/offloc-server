@@ -5,30 +5,24 @@ const { setupBasicApp } = require('../test-helpers');
 const createChangePasswordRouter = require('../../server/routes/changePassword');
 const passwordValidationService = require('../../server/services/passwordValidation');
 
-const updateUserPasswordStub = sinon.stub().resolves({ ok: true, errors: [] });
-
 const successService = {
   keyVaultService: {
-    createKeyVaultService: sinon.stub().resolves({
-      updateUserPassword: updateUserPasswordStub,
-    }),
+    updatePassword: sinon.stub().resolves({ ok: true, errors: [] }),
   },
   passwordValidationService,
 };
 
 const passwordErrorService = {
   keyVaultService: {
-    createKeyVaultService: sinon.stub().resolves({
-      updateUserPassword: updateUserPasswordStub,
-    }),
+    updatePassword: sinon.stub().resolves({ ok: true, errors: [] }),
   },
   passwordValidationService,
 };
 
 const updateUserPasswordErrorService = {
   keyVaultService: {
-    createKeyVaultService: sinon.stub().resolves({
-      updateUserPassword: sinon.stub().resolves({ ok: false, errors: [{ type: 'foo', value: 'foo-error' }] }),
+    updatePassword: sinon.stub().resolves({
+      ok: false, errors: [{ type: 'foo', value: 'foo-error' }],
     }),
   },
   passwordValidationService,
@@ -89,9 +83,13 @@ describe('/change-password', () => {
           })
           .expect(302)
           .then((response) => {
-            expect(updateUserPasswordStub.lastCall.args[0]).to.equal('foo');
-            expect(updateUserPasswordStub.lastCall.args[1]).to.eql({ currentPassword: 'foobar', newPassword: securePassword });
-            expect(response.header.location).to.equal('/change-password/confirmation');
+            const { updatePassword } = successService.keyVaultService;
+            expect(updatePassword.lastCall.args[0])
+              .to.equal('foo');
+            expect(updatePassword.lastCall.args[1])
+              .to.eql({ currentPassword: 'foobar', newPassword: securePassword });
+            expect(response.header.location)
+              .to.equal('/change-password/confirmation');
           });
       });
     });

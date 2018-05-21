@@ -8,7 +8,7 @@ const passwordValidationService = require('./services/passwordValidation');
 const buildInfo = config.dev ? null : require('../build-info.json'); // eslint-disable-line import/no-unresolved
 
 const app = createApp({
-  keyVaultService,
+  keyVaultService: keyVaultService(),
   storageService: storageService(),
   appInfo: appInfoService(buildInfo),
   passwordValidationService,

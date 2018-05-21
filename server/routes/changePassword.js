@@ -31,8 +31,7 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
           },
         });
       }
-      const service = await keyVaultService.createKeyVaultService();
-      const result = await service.updateUserPassword(username, passwordCheck.data);
+      const result = await keyVaultService.updatePassword(username, passwordCheck.data);
 
       if (!result.ok) {
         logger.info({ user: username }, 'Invalid credentials');

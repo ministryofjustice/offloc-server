@@ -4,7 +4,7 @@ const logger = require('../loggers/logger.js');
 const { isExpired } = require('../../utils/index');
 
 
-function authenticationMiddleWare(authenticationService) {
+function authenticationMiddleWare(service) {
   return async function requireAuthentication(req, res, next) {
     const auth = basicAuth(req);
 
@@ -14,7 +14,6 @@ function authenticationMiddleWare(authenticationService) {
     }
 
     try {
-      const service = await authenticationService.createKeyVaultService();
       const user = await service.validateUser(auth.name, auth.pass);
 
       if (user.ok) {

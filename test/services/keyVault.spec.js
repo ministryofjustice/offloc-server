@@ -1,108 +1,156 @@
 const bcrypt = require('bcrypt');
 
-const {
-  createUserInKeyVault,
-  checkUserInKeyVault,
-  generatePasswordHash,
-  updateUserPassword,
-} = require('../../server/services/keyVault');
+const createKeyVaultService = require('../../server/services/keyVault');
+const config = require('../../server/config');
 
+function generatePasswordHash(password) {
+  // Fixed salt with low number of rounds so things go faster
+  return bcrypt.hashSync(password, '$2b$04$Hh1KRFVlAxhbFCganFbgnu');
+}
 
-describe('Authentication', () => {
-  describe('.createUserInKeyVault', () => {
-    it('adds a new user to the azure key vault with an encrypted password', async () => {
-      const client = { setSecret: sinon.stub().resolves(true) };
-      const createUser = createUserInKeyVault(client);
-      const username = 'foo';
-      const password = 'foo-password';
+describe('services/keyVault', () => {
+  let client;
+  let service;
+  beforeEach(async () => {
+    client = { getSecret: sinon.stub(), setSecret: sinon.stub() };
+    service = await createKeyVaultService(client);
+  });
 
-      await createUser(username, password);
+  describe('.createUser', () => {
+    let args;
+    beforeEach(async () => {
+      client.setSecret.resolves(true);
 
-      const hashedPassword = client.setSecret.args[0][2];
-      const passwordMatch = await bcrypt.compare(password, hashedPassword);
+      await service.createUser('foo', 'foo-password');
 
-      expect(client.setSecret.args[0][1]).to.equal(username);
-      expect(passwordMatch).to.equal(true);
+      ({ args } = client.setSecret.lastCall);
     });
+    it('adds a new user to the azure key vault', () => {
+      expect(client.setSecret.callCount).to.eql(1);
+      expect(args[1]).to.equal('foo');
+    });
+    it('sets a hashed password', () => {
+      expect(bcrypt.compareSync('foo-password', args[2])).to.equal(true);
+    });
+    it('sets expired password', () => {
+      const expires = new Date(args[3].secretAttributes.expires);
+      expect(+expires).to.be.closeTo(+new Date(), 20 * 1000);
+    });
+  });
 
-    describe('.checkUserInKeyVault', () => {
-      it('returns true when authentication passes', async () => {
-        const hashedPassword = await generatePasswordHash('foo-password');
-        const client = {
-          getSecret: sinon.stub().resolves({
-            value: hashedPassword,
-            attributes: {
-              expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-            },
-          }),
-        };
-        const checkUser = checkUserInKeyVault(client);
-
-        const username = 'foo';
-        const password = 'foo-password';
-
-        const exists = await checkUser(username, password);
-
-        expect(exists).to.eql({ ok: true, data: { expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)' } });
+  describe('.validateUser', () => {
+    it('returns true when authentication passes', async () => {
+      const hashedPassword = generatePasswordHash('foo-password');
+      client.getSecret.resolves({
+        value: hashedPassword,
+        attributes: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+        },
       });
 
-      it('returns false when there is an error with authentication', async () => {
-        const client = {
-          getSecret: sinon.stub().rejects({ status: 404 }),
-        };
-        const checkUser = checkUserInKeyVault(client);
+      const exists = await service.validateUser('foo', 'foo-password');
 
-        const username = 'foo';
-        const password = 'foo-password';
-
-        const exists = await checkUser(username, password);
-
-        expect(exists).to.eql({ ok: false, data: null });
-      });
+      expect(exists).to.eql({ ok: true, data: { expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)' } });
     });
 
-    describe('.updateUserPassword', () => {
-      it('updates a users password', async () => {
-        const username = 'foo';
-        const currentPassword = 'foo-password';
-        const newPassword = 'new-password';
-        const hashedPassword = await generatePasswordHash(currentPassword);
+    it('returns false when there is an error with authentication', async () => {
+      client.getSecret.rejects({ status: 404 });
 
-        const client = {
-          setSecret: sinon.stub().resolves(true),
-          getSecret: sinon.stub().resolves({
-            value: hashedPassword,
-            attributes: {
-              expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-            },
-          }),
-        };
+      const exists = await service.validateUser('foo', 'foo-password');
 
-        const updatePassword = updateUserPassword(client);
+      expect(exists).to.eql({ ok: false, data: null });
+    });
 
-        const result = await updatePassword(username, { currentPassword, newPassword });
+    it('returns false when the password is wrong', async () => {
+      const hashedPassword = generatePasswordHash('other-password');
+      client.getSecret.resolves({
+        value: hashedPassword,
+        attributes: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+        },
+      });
 
+      const exists = await service.validateUser('foo', 'foo-password');
+
+      expect(exists).to.eql({ ok: false, data: null });
+    });
+  });
+
+  describe('.updatePassword', () => {
+    describe('when valid', () => {
+      let result;
+      let args;
+      beforeEach(async () => {
+        config.passwordExpirationDuration = 90 * 24 * 3600 * 1000;
+        client.getSecret.resolves({
+          value: generatePasswordHash('foo-password'),
+          attributes: {
+            expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          },
+        });
+        client.setSecret.resolves(true);
+
+        result = await service.updatePassword('foo', {
+          currentPassword: 'foo-password',
+          newPassword: 'new-password',
+        });
+
+        ({ args } = client.setSecret.lastCall);
+      });
+      it('returns ok', () => {
         expect(result.ok).to.equal(true);
         expect(result.errors.length).to.equal(0);
       });
-
-      it('does not update the password when the user does not exist', async () => {
-        const username = 'foo';
-        const currentPassword = 'foo-password';
-        const newPassword = 'new-password';
-
-        const client = {
-          setSecret: sinon.stub().resolves(true),
-          getSecret: sinon.stub().rejects({ status: 404 }),
-        };
-
-        const updatePassword = updateUserPassword(client);
-
-        const result = await updatePassword(username, { currentPassword, newPassword });
-
-        expect(result.ok).to.equal(false);
-        expect(result.errors.length).to.equal(1);
+      it('updates user', () => {
+        expect(client.setSecret.callCount).to.eql(1);
+        expect(args[1]).to.equal('foo');
       });
+      it('sets new password hash', async () => {
+        expect(bcrypt.compareSync('new-password', args[2])).to.equal(true);
+      });
+      it('resets password expiry time', async () => {
+        const expires = new Date(args[3].secretAttributes.expires);
+        expect(+expires).to.be.closeTo(
+          Number(new Date()) + config.passwordExpirationDuration,
+          1000,
+        );
+      });
+    });
+
+    it('does not update the password when the user does not exist', async () => {
+      client.getSecret.rejects({ status: 404 });
+      client.setSecret.resolves(true);
+
+      const result = await service.updatePassword('foo', {
+        currentPassword: 'foo-password',
+        newPassword: 'new-password',
+      });
+
+      expect(result.ok).to.equal(false);
+      expect(result.errors.length).to.equal(1);
+
+      expect(client.setSecret.callCount).to.equal(0);
+    });
+
+    it('does not update the password when the password is wrong', async () => {
+      const hashedPassword = generatePasswordHash('other-password');
+      client.getSecret.resolves({
+        value: hashedPassword,
+        attributes: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+        },
+      });
+      client.setSecret.resolves(true);
+
+      const result = await service.updatePassword('foo', {
+        currentPassword: 'foo-password',
+        newPassword: 'new-password',
+      });
+
+      expect(result.ok).to.equal(false);
+      expect(result.errors.length).to.equal(1);
+
+      expect(client.setSecret.callCount).to.equal(0);
     });
   });
 });
