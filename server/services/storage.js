@@ -1,6 +1,6 @@
-const azure = require('azure');
 const msRestAzure = require('ms-rest-azure');
 const azureStorage = require('azure-storage');
+const StorageManagementClient = require('azure-arm-storage');
 
 const config = require('../config');
 const logger = require('../loggers/logger');
@@ -21,44 +21,53 @@ function getStorageCredentials() {
   return azureLocal.createBlobStorageCredentials(config.azureBlobStorageSubscriptionId);
 }
 
-async function createBlobServiceClient() {
-  const credentials = await getStorageCredentials();
-  const resourceGroup = config.azureBloStorageResourceGroup;
-  const accountName = config.azureBlobStorageAccountName;
-  const subscriptionId = config.azureBlobStorageSubscriptionId;
-  const containerName = config.azureBlobStorageContainerName;
-  const permissions = 'r';
-  const startDate = new Date().toUTCString();
-  const endDate = addHoursToTime(new Date(), 1).toUTCString();
+async function createBlobServiceClient(blobServiceClient) {
+  let service;
 
-  const { keys } = await azure
-    .createStorageManagementClient(credentials, subscriptionId)
-    .storageAccounts
-    .listKeys(
-      resourceGroup,
-      accountName,
-      {
-        canonicalizedResource: `/blob/${accountName}/${containerName}`,
-        resource: 'b',
-        permissions,
-        sharedAccessStartTime: startDate,
-        sharedAccessExpiryTime: endDate,
-      },
-    );
+  if (!blobServiceClient) {
+    const resourceGroup = config.azureBloStorageResourceGroup;
+    const accountName = config.azureBlobStorageAccountName;
+    const subscriptionId = config.azureBlobStorageSubscriptionId;
+    const containerName = config.azureBlobStorageContainerName;
+    const permissions = 'r';
+    const startDate = new Date().toUTCString();
+    const endDate = addHoursToTime(new Date(), 1).toUTCString();
+    const credentials = await getStorageCredentials();
+    const client = new StorageManagementClient(credentials, subscriptionId);
 
-  const key = keys[0].value;
-  const connectionString = `DefaultEndpointsProtocol=https;AccountName=${accountName};AccountKey=${key};EndpointSuffix=core.windows.net`;
-  const client = azureStorage.createBlobService(connectionString);
+    const { keys } =
+      await client
+        .storageAccounts
+        .listKeys(
+          resourceGroup,
+          accountName,
+          {
+            canonicalizedResource: `/blob/${accountName}/${containerName}`,
+            resource: 'b',
+            permissions,
+            sharedAccessStartTime: startDate,
+            sharedAccessExpiryTime: endDate,
+          },
+        );
 
-  return client;
+    const key = keys[0].value;
+    const connectionString = `DefaultEndpointsProtocol=https;AccountName=${accountName};AccountKey=${key};EndpointSuffix=core.windows.net`;
+
+    service = azureStorage.createBlobService(connectionString);
+  } else {
+    service = blobServiceClient;
+  }
+
+  return {
+    downloadFile: downloadFile(service),
+    todaysFile: todaysFile(service),
+  };
 }
 
 // eslint-disable-next-line no-unused-vars
-const listFiles = async () => {
-  const blobService = await createBlobServiceClient();
-
+function listFiles(service) {
   return new Promise((resolve, reject) => {
-    blobService.listBlobsSegmented(config.azureBlobStorageContainerName, null, (error, data) => {
+    service.listBlobsSegmented(config.azureBlobStorageContainerName, null, (error, data) => {
       if (error) {
         reject(error);
       } else {
@@ -66,9 +75,9 @@ const listFiles = async () => {
       }
     });
   });
-};
+}
 
-const todaysFileName = () => {
+function todaysFileName() {
   const date = new Date();
   const year = date.getFullYear();
   let month = date.getMonth() + 1;
@@ -83,17 +92,16 @@ const todaysFileName = () => {
   }
 
   return `${year}${month}${day}.zip`;
-};
+}
 
 
-const todaysFile = async () => {
-  const blobService = await createBlobServiceClient();
+function todaysFile(service) {
   const blobName = todaysFileName();
 
   logger.debug({ todaysFile: blobName }, 'Fetching todays file');
 
-  return new Promise((resolve) => {
-    blobService.doesBlobExist(config.azureBlobStorageContainerName, blobName, (error, result) => {
+  return () => new Promise((resolve) => {
+    service.doesBlobExist(config.azureBlobStorageContainerName, blobName, (error, result) => {
       if (error) logger.error(error);
 
       if (result && result.exists) {
@@ -105,22 +113,18 @@ const todaysFile = async () => {
       return resolve(null);
     });
   });
-};
+}
 
-const downloadFile = async (blobName) => {
-  const blobService = await createBlobServiceClient();
-  const downloadOptions = { useTransactionalMD5: true, parallelOperationThreadCount: 5 };
+function downloadFile(service) {
+  return async (blobName) => {
+    const downloadOptions = { useTransactionalMD5: true, parallelOperationThreadCount: 5 };
 
-  logger.debug({ file: blobName }, 'Downloading file');
+    logger.debug({ file: blobName }, 'Downloading file');
 
-  return blobService
-    .createReadStream(config.azureBlobStorageContainerName, blobName, downloadOptions);
-};
-
-
-module.exports = function storageService() {
-  return {
-    downloadFile,
-    todaysFile,
+    return service
+      .createReadStream(config.azureBlobStorageContainerName, blobName, downloadOptions);
   };
-};
+}
+
+
+module.exports = createBlobServiceClient;

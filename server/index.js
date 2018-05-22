@@ -9,7 +9,7 @@ const buildInfo = config.dev ? null : require('../build-info.json'); // eslint-d
 
 const app = async () => createApp({
   keyVaultService: await keyVaultService(),
-  storageService: storageService(),
+  storageService: await storageService(),
   appInfo: appInfoService(buildInfo),
   passwordValidationService,
 });

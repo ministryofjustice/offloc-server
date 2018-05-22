@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "applicationinsights": "^1.0.2",
-    "azure": "^2.2.1-preview",
+    "azure-arm-storage": "^4.0.0",
     "azure-keyvault": "^3.0.4-preview",
     "azure-storage": "^2.8.2",
     "basic-auth": "^2.0.0",
