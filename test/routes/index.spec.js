@@ -1,23 +1,15 @@
 const request = require('supertest');
 const AdmZip = require('adm-zip');
-const azure = require('azure');
-const azureStorage = require('azure-storage');
 
 const createIndexRouter = require('../../server/routes/index');
+const storageService = require('../../server/services/storage');
+
 const {
   createBlobServiceSuccess,
   createBlobServiceError,
   binaryParser,
   setupBasicApp,
 } = require('../test-helpers');
-const storageService = require('../../server/services/storage');
-const azureLocal = require('../../server/services/azure-local');
-
-
-const router = createIndexRouter({ storageService: storageService() });
-
-const app = setupBasicApp();
-app.use(router);
 
 describe('GET /', () => {
   const entry = {
@@ -25,81 +17,54 @@ describe('GET /', () => {
     lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
     exists: true,
   };
-  let azureLocalStub;
-  let azureStub;
-
-  before(() => {
-    azureLocalStub = sinon.stub(azureLocal, 'createBlobStorageCredentials').returns(null);
-    azureStub = sinon.stub(azure, 'createStorageManagementClient').callsFake(() => ({
-      storageAccounts: {
-        listKeys: sinon.stub().returns({ keys: [{ value: 'foo' }] }),
-      },
-    }));
-  });
-
-  after(() => {
-    azureLocalStub.restore();
-    azureStub.restore();
-  });
-
   describe('when there is a file available for download', () => {
-    let stub;
+    it('respond with a page displaying a file to download', async () => {
+      const app = setupBasicApp();
+      const service = await storageService(createBlobServiceSuccess(entry));
 
-    beforeEach(() => {
-      const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
+      app.use(createIndexRouter({
+        storageService: service,
+      }));
 
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('respond with a page displaying a file to download', () =>
-      request(app)
+      return request(app)
         .get('/')
         .expect('Content-Type', /text\/html/)
         .expect(200)
         .then((response) => {
           expect(response.text).to.include('<td>20180418.zip</td>');
-        }));
+        });
+    });
   });
 
   describe('when there isn\'t file available for download', () => {
-    let stub;
+    it('respond with a page displaying the corresponding message', async () => {
+      const app = setupBasicApp();
+      const service = await storageService(createBlobServiceError());
 
-    beforeEach(() => {
-      const blobService = createBlobServiceError();
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
+      app.use(createIndexRouter({
+        storageService: service,
+      }));
 
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('respond with a page displaying the corresponding message', () =>
-      request(app)
+      return request(app)
         .get('/')
         .expect('Content-Type', /text\/html/)
         .expect(200)
         .then((response) => {
           expect(response.text).to.include('No files found for download.');
-        }));
+        });
+    });
   });
 
   describe('Successful download request', () => {
-    let stub;
+    it('downloads the latest file available', async () => {
+      const app = setupBasicApp();
+      const service = await storageService(createBlobServiceSuccess());
 
-    beforeEach(() => {
-      const blobService = createBlobServiceSuccess(entry);
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
+      app.use(createIndexRouter({
+        storageService: service,
+      }));
 
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('downloads the latest file available', () =>
-      request(app)
+      return request(app)
         .get('/20180418.zip')
         .expect('Content-Type', /zip/)
         .expect(200)
@@ -110,28 +75,26 @@ describe('GET /', () => {
           const zipContents = contents.getEntries();
           expect(zipContents.length).to.equal(1);
           expect(zipContents[0].entryName).to.equal('report.csv');
-        }));
+        });
+    });
   });
 
   describe('Unsuccessful download request', () => {
-    let stub;
+    it('returns a 404 when an error occurs with the download', async () => {
+      const app = setupBasicApp();
+      const service = await storageService(createBlobServiceError());
 
-    beforeEach(() => {
-      const blobService = createBlobServiceError();
-      stub = sinon.stub(azureStorage, 'createBlobService').callsFake(blobService);
-    });
+      app.use(createIndexRouter({
+        storageService: service,
+      }));
 
-    afterEach(() => {
-      stub.restore();
-    });
-
-    it('returns a 404 when an error occurs with the download', () =>
-      request(app)
+      return request(app)
         .get('/20180418.zip')
         .expect('Content-Type', /text\/html/)
         .expect(404)
         .then((response) => {
           expect(response.text).to.include('could not be found.');
-        }));
+        });
+    });
   });
 });

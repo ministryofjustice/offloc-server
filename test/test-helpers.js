@@ -18,21 +18,21 @@ function binaryParser(res, callback) {
 }
 
 function createBlobServiceSuccess(entry) {
-  return () => ({
+  return {
     doesBlobExist: (containerName, blobName, callback) => callback(null, entry),
     createReadStream: () => fs.createReadStream(path.resolve(__dirname, './resources/20181704.zip')),
-  });
+  };
 }
 
 function createBlobServiceError() {
-  return () => ({
+  return {
     doesBlobExist: (containerName, blobName, callback) => callback('error', null),
     createReadStream: () => new Readable({
       read() {
         process.nextTick(() => this.emit('error', 'some error'));
       },
     }),
-  });
+  };
 }
 
 function setupBasicApp() {
