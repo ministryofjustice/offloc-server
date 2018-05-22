@@ -13,7 +13,7 @@ const bunyanMiddleware = require('bunyan-middleware');
 const logger = require('./loggers/logger.js');
 
 const config = require('./config');
-const authenticationMiddleWare = require('./middleware/authentication');
+const { authenticationMiddleWare, passwordExpiredMiddleWare } = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
@@ -135,8 +135,8 @@ module.exports = function createApp({
   }));
 
   // Routes
-  app.use('/', authenticationMiddleWare(keyVaultService), createIndexRouter({ storageService }));
   app.use('/change-password', authenticationMiddleWare(keyVaultService), createChangePasswordRouter({ keyVaultService, passwordValidationService }));
+  app.use('/', [authenticationMiddleWare(keyVaultService), passwordExpiredMiddleWare], createIndexRouter({ storageService }));
 
   app.use('*', (req, res) => {
     res.status(404);

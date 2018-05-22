@@ -29,7 +29,12 @@ describe('Authentication', () => {
       it('returns true when authentication passes', async () => {
         const hashedPassword = await generatePasswordHash('foo-password');
         const client = {
-          getSecret: sinon.stub().resolves({ value: hashedPassword }),
+          getSecret: sinon.stub().resolves({
+            value: hashedPassword,
+            attributes: {
+              expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+            },
+          }),
         };
         const checkUser = checkUserInKeyVault(client);
 
@@ -38,7 +43,7 @@ describe('Authentication', () => {
 
         const exists = await checkUser(username, password);
 
-        expect(exists).to.equal(true);
+        expect(exists).to.eql({ ok: true, data: { expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)' } });
       });
 
       it('returns false when there is an error with authentication', async () => {
@@ -52,7 +57,7 @@ describe('Authentication', () => {
 
         const exists = await checkUser(username, password);
 
-        expect(exists).to.equal(false);
+        expect(exists).to.eql({ ok: false, data: null });
       });
     });
 
@@ -65,7 +70,12 @@ describe('Authentication', () => {
 
         const client = {
           setSecret: sinon.stub().resolves(true),
-          getSecret: sinon.stub().resolves({ value: hashedPassword }),
+          getSecret: sinon.stub().resolves({
+            value: hashedPassword,
+            attributes: {
+              expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+            },
+          }),
         };
 
         const updatePassword = updateUserPassword(client);
