@@ -54,7 +54,6 @@
     "morgan": "~1.9.0",
     "ms-rest-azure": "^2.5.5",
     "node-sass-middleware": "0.11.0",
-    "passport": "^0.4.0",
     "poll-endpoint-for": "^0.0.4",
     "promise-timeout": "^1.3.0",
     "sass-middleware": "^0.0.3"

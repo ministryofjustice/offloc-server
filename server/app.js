@@ -135,17 +135,10 @@ module.exports = function createApp({
   }));
 
   // Routes
-  app.use(
-    '/change-password',
-    authenticationMiddleWare(keyVaultService),
-    createChangePasswordRouter({ keyVaultService, passwordValidationService }),
-  );
-  app.use(
-    '/',
-    authenticationMiddleWare(keyVaultService),
-    passwordExpiredMiddleWare,
-    createIndexRouter({ storageService }),
-  );
+  app.use(authenticationMiddleWare(keyVaultService));
+  app.use(createChangePasswordRouter({ keyVaultService, passwordValidationService }));
+  app.use(passwordExpiredMiddleWare);
+  app.use(createIndexRouter({ storageService }));
 
   app.use('*', (req, res) => {
     res.status(404);
