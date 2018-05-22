@@ -17,10 +17,11 @@
   },
   "nodemonConfig": {
     "ignore": [
-      ".circleci/*",
-      "migrations/*",
-      "node_modules/*",
-      "test/*"
+      ".circleci",
+      "migrations",
+      "node_modules",
+      "build-info.json",
+      "test"
     ],
     "delay": "2500"
   },

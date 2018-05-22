@@ -6,12 +6,11 @@ const logger = require('../loggers/logger');
 const config = require('../config');
 const { createVaultCredentials } = require('./azure-local');
 
-
 const keyVaultUri = config.keyVaultUrl;
 
-function expireIn(seconds = 0) {
+function expireIn(ms) {
   const date = new Date();
-  date.setSeconds(date.getSeconds() + seconds);
+  date.setTime(date.getTime() + ms);
 
   return date;
 }
@@ -26,30 +25,75 @@ function getKeyVaultCredentials() {
   return Promise.resolve(createVaultCredentials());
 }
 
-async function createKeyVaultService() {
-  const credentials = await getKeyVaultCredentials();
-  const client = new KeyVaultClient(credentials);
+async function createKeyVaultService(override) {
+  const client = override || new KeyVaultClient(await getKeyVaultCredentials());
 
   return {
-    updateUserPassword: updateUserPassword(client),
-    createUserInKeyVault: createUserInKeyVault(client),
-    validateUser: checkUserInKeyVault(client),
-  };
-}
-
-
-function keyVaultSecretSetter(client, opts = {}) {
-  const attributes = {
-    expires: expireIn(),
-    notBefore: Date.today(),
-    ...opts,
+    createUser,
+    validateUser,
+    updatePassword,
   };
 
-  return (secretName, value) => client.setSecret(keyVaultUri, secretName, value, { contentType: 'user account', secretAttributes: attributes });
-}
+  async function createUser(username, password) {
+    return setUser(username, password, 0);
+  }
 
-function keyVaultSecretGetter(client) {
-  return (secretName, secretVersion = '') => client.getSecret(keyVaultUri, secretName, secretVersion);
+  async function validateUser(username, password) {
+    try {
+      logger.debug({ user: username }, 'Fetching user from vault');
+      const { value: existingHash, attributes } = await getUser(username);
+
+      logger.debug({ user: username }, 'Comparing password');
+
+      const authenticated = await bcrypt.compare(password, existingHash);
+
+      return {
+        ok: authenticated,
+        data: (authenticated) ? { expires: attributes.expires } : null,
+      };
+    } catch (error) {
+      logger.error(error, 'Failed to validate user');
+      return {
+        ok: false,
+        data: null,
+      };
+    }
+  }
+
+  async function updatePassword(username, { currentPassword, newPassword }) {
+    const result = await validateUser(username, currentPassword);
+    if (!result.ok) {
+      return {
+        ok: false,
+        errors: [{
+          type: 'credentialsInvalid',
+          value: 'Failed to verify username & password',
+        }],
+      };
+    }
+
+    await setUser(username, newPassword, config.passwordExpirationDuration);
+
+    return { ok: true, errors: [] };
+  }
+
+  async function getUser(name) {
+    return client.getSecret(keyVaultUri, name, '');
+  }
+
+  async function setUser(username, password, expiry) {
+    const hashedPassword = await generatePasswordHash(password);
+
+    const attributes = {
+      expires: expireIn(expiry),
+      notBefore: new Date(),
+    };
+
+    return client.setSecret(keyVaultUri, username, hashedPassword, {
+      contentType: 'user account',
+      secretAttributes: attributes,
+    });
+  }
 }
 
 function generatePasswordHash(password) {
@@ -57,64 +101,4 @@ function generatePasswordHash(password) {
   return bcrypt.hash(password, saltRounds);
 }
 
-function createUserInKeyVault(client, opts) {
-  const setSecretClient = keyVaultSecretSetter(client, opts);
-
-  return async (username, password) => {
-    const hashedPassword = await generatePasswordHash(password);
-
-    return setSecretClient(username, hashedPassword);
-  };
-}
-
-function checkUserInKeyVault(client) {
-  const getSecret = keyVaultSecretGetter(client);
-
-  return async (username, password) => {
-    try {
-      logger.debug({ user: username }, 'Fetching user from vault');
-      const { value: vaultPasswordHash, attributes } = await getSecret(username);
-
-      logger.debug({ user: username }, 'Comparing password');
-
-      const authenticated = await bcrypt.compare(password, vaultPasswordHash);
-      const data = { expires: attributes.expires };
-
-      return { ok: authenticated, data: (authenticated) ? data : null };
-    } catch (error) {
-      logger.error(error);
-      return { ok: false, data: null };
-    }
-  };
-}
-
-function updateUserPassword(client) {
-  return async (username, { currentPassword, newPassword }) => {
-    const checkUser = checkUserInKeyVault(client);
-    const userCredentials = await checkUser(username, currentPassword);
-
-    if (!userCredentials.ok) {
-      return {
-        ok: false,
-        errors: [{ type: 'credentialsInvalid', value: 'There was a problem authenticating this request. Please check that you\'ve entered all details correctly' }],
-      };
-    }
-
-    const updateUser = createUserInKeyVault(client, {
-      expires: expireIn(config.passwordExpirationDuration),
-    });
-
-    await updateUser(username, newPassword);
-
-    return { ok: true, errors: [] };
-  };
-}
-
-
-module.exports = {
-  updateUserPassword,
-  createKeyVaultService,
-  generatePasswordHash,
-  createUserInKeyVault,
-  checkUserInKeyVault,
-};
+module.exports = createKeyVaultService;
