@@ -85,9 +85,12 @@ describe('/change-password', () => {
           .then((response) => {
             const { updatePassword } = successService.keyVaultService;
             expect(updatePassword.lastCall.args[0])
-              .to.equal('foo');
-            expect(updatePassword.lastCall.args[1])
-              .to.eql({ currentPassword: 'foobar', newPassword: securePassword });
+              .to.eql({
+                username: 'foo',
+                accountType: 'foo account',
+                currentPassword: 'foobar',
+                newPassword: securePassword,
+              });
             expect(response.header.location)
               .to.equal('/change-password/confirmation');
           });

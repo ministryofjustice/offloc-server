@@ -18,6 +18,7 @@ const { authenticationMiddleWare, passwordExpiredMiddleWare } = require('./middl
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
 const createChangePasswordRouter = require('./routes/changePassword');
+const createAdminRouter = require('./routes/admin');
 
 const version = Date.now().toString();
 
@@ -73,13 +74,6 @@ module.exports = function createApp({
 
   // GovUK Template Configuration
   app.locals.asset_path = '/public/';
-
-  function addTemplateVariables(req, res, next) {
-    res.locals.user = req.user;
-    next();
-  }
-
-  app.use(addTemplateVariables);
 
   // Don't cache dynamic resources
   app.use(helmet.noCache());
@@ -138,6 +132,7 @@ module.exports = function createApp({
   app.use(authenticationMiddleWare(keyVaultService));
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
+  app.use('/admin', createAdminRouter({ keyVaultService }));
   app.use('/', createIndexRouter({ storageService }));
 
   app.use('*', (req, res) => {

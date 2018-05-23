@@ -48,7 +48,10 @@ function setupBasicApp() {
   app.use(csurf({ cookie: true }));
 
   app.use((req, res, next) => {
-    res.locals.user = 'foo';
+    res.locals.user = {
+      username: 'foo',
+      accountType: 'foo account',
+    };
     res.locals.version = 'foo';
     next();
   });

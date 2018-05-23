@@ -21,7 +21,11 @@ describe('services/keyVault', () => {
     beforeEach(async () => {
       client.setSecret.resolves(true);
 
-      await service.createUser('foo', 'foo-password');
+      await service.createUser({
+        username: 'foo',
+        password: 'foo-password',
+        accountType: 'foo user',
+      });
 
       ({ args } = client.setSecret.lastCall);
     });
@@ -36,6 +40,10 @@ describe('services/keyVault', () => {
       const expires = new Date(args[3].secretAttributes.expires);
       expect(+expires).to.be.closeTo(+new Date(), 20 * 1000);
     });
+
+    it('sets the account type', () => {
+      expect(args[3].contentType).to.equal('foo user');
+    });
   });
 
   describe('.validateUser', () => {
@@ -43,6 +51,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('foo-password');
       client.getSecret.resolves({
         value: hashedPassword,
+        contentType: 'foo account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -50,7 +59,13 @@ describe('services/keyVault', () => {
 
       const exists = await service.validateUser('foo', 'foo-password');
 
-      expect(exists).to.eql({ ok: true, data: { expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)' } });
+      expect(exists).to.eql({
+        ok: true,
+        data: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          accountType: 'foo account',
+        },
+      });
     });
 
     it('returns false when there is an error with authentication', async () => {
@@ -64,6 +79,7 @@ describe('services/keyVault', () => {
     it('returns false when the password is wrong', async () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
+        contentType: 'foo account',
         value: hashedPassword,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
@@ -84,15 +100,18 @@ describe('services/keyVault', () => {
         config.passwordExpirationDuration = 90 * 24 * 3600 * 1000;
         client.getSecret.resolves({
           value: generatePasswordHash('foo-password'),
+          contentType: 'foo account',
           attributes: {
             expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
           },
         });
         client.setSecret.resolves(true);
 
-        result = await service.updatePassword('foo', {
+        result = await service.updatePassword({
+          username: 'foo',
           currentPassword: 'foo-password',
           newPassword: 'new-password',
+          accountType: 'foo account',
         });
 
         ({ args } = client.setSecret.lastCall);
@@ -108,6 +127,10 @@ describe('services/keyVault', () => {
       it('sets new password hash', async () => {
         expect(bcrypt.compareSync('new-password', args[2])).to.equal(true);
       });
+
+      it('sets the account type', () => {
+        expect(args[3].contentType).to.equal('foo account');
+      });
       it('resets password expiry time', async () => {
         const expires = new Date(args[3].secretAttributes.expires);
         expect(+expires).to.be.closeTo(
@@ -121,9 +144,11 @@ describe('services/keyVault', () => {
       client.getSecret.rejects({ status: 404 });
       client.setSecret.resolves(true);
 
-      const result = await service.updatePassword('foo', {
+      const result = await service.updatePassword({
+        username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
+        accountType: 'foo account',
       });
 
       expect(result.ok).to.equal(false);
@@ -136,15 +161,18 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
         value: hashedPassword,
+        contentType: 'foo account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
       });
       client.setSecret.resolves(true);
 
-      const result = await service.updatePassword('foo', {
+      const result = await service.updatePassword({
+        username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
+        accountType: 'foo account',
       });
 
       expect(result.ok).to.equal(false);
