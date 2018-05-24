@@ -96,11 +96,11 @@ function todaysFileName() {
 
 
 function todaysFile(service) {
-  const blobName = todaysFileName();
-
-  logger.debug({ todaysFile: blobName }, 'Fetching todays file');
-
   return () => new Promise((resolve) => {
+    const blobName = todaysFileName();
+
+    logger.debug({ todaysFile: blobName }, 'Fetching todays file');
+
     service.doesBlobExist(config.azureBlobStorageContainerName, blobName, (error, result) => {
       if (error) logger.error(error);
 
