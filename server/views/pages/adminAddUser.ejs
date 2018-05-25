@@ -13,7 +13,7 @@
         <div class="column-two-thirds">
           <h1 class="heading-large">Add user</h1>
 
-          <form class="form" action="/admin/add-user" method="POST">
+          <form class="form" action="<%= locals.constants.routes.ADD_USER %>" method="POST">
             <% if (success) { %>
               <div class="govuk-box-highlight u-ta-left">
                 <h2 class="heading-medium u-no-margin-top">User was successfully added</h2>
