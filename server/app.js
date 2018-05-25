@@ -13,6 +13,8 @@ const bunyanMiddleware = require('bunyan-middleware');
 const logger = require('./loggers/logger.js');
 
 const config = require('./config');
+const constants = require('./constants/app');
+
 const { authenticationMiddleWare, passwordExpiredMiddleWare } = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
@@ -130,6 +132,11 @@ module.exports = function createApp({
 
   // Routes
   app.use(authenticationMiddleWare(keyVaultService));
+  // Expose constants to views
+  app.use((req, res, next) => {
+    res.locals.constants = constants;
+    next();
+  });
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
   app.use('/admin', createAdminRouter({ keyVaultService }));

@@ -23,11 +23,6 @@ module.exports = function Index({ keyVaultService }) {
     }
   });
 
-  router.use((req, res, next) => {
-    res.locals.constants = constants;
-    next();
-  });
-
   router.get('/', async (req, res, next) => {
     try {
       const accounts = await keyVaultService.listUsers();

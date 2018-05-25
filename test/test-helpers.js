@@ -56,6 +56,7 @@ function setupBasicApp({ accountType } = {}) {
       accountType: accountType || constants.USER_ACCOUNT,
     };
     res.locals.version = 'foo';
+    res.locals.constants = constants;
     next();
   });
   return app;
