@@ -14,11 +14,19 @@
           <h1 class="heading-large">Dashboard</h1>
 
           <div class=="grid-rowgrid-row">
+          <div class="column-one-quarter">
+              <div class="panel panel-border-wide">
+                <div class="data">
+                  <span id="total-users-count" class="data-item bold-xxlarge"><%= accounts.length %></span>
+                  <span class="data-item bold-xsmall">Total users</span>
+                </div>
+              </div>
+            </div>
             <div class="column-one-quarter">
               <div class="panel panel-border-wide">
                 <div class="data">
-                  <span class="data-item bold-xxlarge"><%= stats.users %></span>
-                  <span class="data-item bold-xsmall">Users</span>
+                  <span id="users-count" class="data-item bold-xxlarge"><%= stats.users %></span>
+                  <span class="data-item bold-xsmall">Normal Users</span>
                 </div>
               </div>
             </div>
@@ -26,7 +34,7 @@
             <div class="column-one-quarter">
               <div class="panel panel-border-wide">
                 <div class="data">
-                  <span class="data-item bold-xxlarge"><%= stats.admin %></span>
+                  <span id="admin-count" class="data-item bold-xxlarge"><%= stats.admin %></span>
                   <span class="data-item bold-xsmall">Adminstrators</span>
                 </div>
               </div>
@@ -35,17 +43,8 @@
             <div class="column-one-quarter">
               <div class="panel panel-border-wide">
                 <div class="data">
-                  <span class="data-item bold-xxlarge"><%= stats.expired %></span>
+                  <span id="expired-count" class="data-item bold-xxlarge"><%= stats.expired %></span>
                   <span class="data-item bold-xsmall">Expired accounts</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="column-one-quarter">
-              <div class="panel panel-border-wide">
-                <div class="data">
-                  <span class="data-item bold-xxlarge">0</span>
-                  <span class="data-item bold-xsmall">Something useful</span>
                 </div>
               </div>
             </div>

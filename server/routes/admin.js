@@ -78,6 +78,7 @@ module.exports = function Index({ keyVaultService }) {
       });
     } catch (error) {
       logger.error(error);
+      res.status(400);
       res.render('pages/adminAddUser', {
         randomPassword: generateRandomPassword(),
         success: false,
