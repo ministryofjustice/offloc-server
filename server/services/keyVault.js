@@ -127,7 +127,7 @@ async function createKeyVaultService(override) {
     const secrets = await client.getSecrets(keyVaultUri);
     const accounts = ({ contentType }) =>
       contentType === constants.USER_ACCOUNT || contentType === constants.ADMIN_ACCOUNT;
-    const getUserName = str => str.match(/\/(\w+)$/);
+    const getUserName = str => str.match(/\/([\w-_]+)$/);
 
     return secrets
       .filter(accounts)

@@ -1,7 +1,11 @@
 const bcrypt = require('bcrypt');
+const formatDate = require('date-fns/format');
+const startOfToday = require('date-fns/start_of_today');
 
 const createKeyVaultService = require('../../server/services/keyVault');
 const config = require('../../server/config');
+const constants = require('../../server/constants/app');
+
 
 function generatePasswordHash(password) {
   // Fixed salt with low number of rounds so things go faster
@@ -12,7 +16,11 @@ describe('services/keyVault', () => {
   let client;
   let service;
   beforeEach(async () => {
-    client = { getSecret: sinon.stub(), setSecret: sinon.stub() };
+    client = {
+      getSecret: sinon.stub(),
+      setSecret: sinon.stub(),
+      getSecrets: sinon.stub(),
+    };
     service = await createKeyVaultService(client);
   });
 
@@ -179,6 +187,43 @@ describe('services/keyVault', () => {
       expect(result.errors.length).to.equal(1);
 
       expect(client.setSecret.callCount).to.equal(0);
+    });
+  });
+
+  describe('.listUsers', () => {
+    it('returns a list of users', async () => {
+      client.getSecrets.resolves([
+        {
+          id: 'http://vault.com/secrets/foo-user',
+          contentType: constants.ADMIN_ACCOUNT,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+        {
+          id: 'http://vault.com/secrets/bar-user',
+          contentType: constants.USER_ACCOUNT,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+      ]);
+
+      const result = await service.listUsers();
+      expect(result).eql([
+        {
+          accountType: constants.ADMIN_ACCOUNT,
+          username: 'foo-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'MM/DD/YYYY'),
+        },
+        {
+          accountType: constants.USER_ACCOUNT,
+          username: 'bar-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'MM/DD/YYYY'),
+        },
+      ]);
     });
   });
 });
