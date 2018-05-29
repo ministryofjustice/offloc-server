@@ -25,6 +25,7 @@ const successService = {
       },
     ]),
     createUser: sinon.stub().returns(true),
+    deleteUser: sinon.stub().returns(true),
   },
 };
 
@@ -171,7 +172,7 @@ describe('/admin', () => {
           .set('Cookie', cookies)
           .send({
             _csrf: token,
-            admin: true,
+            accountType: constants.ADMIN_ACCOUNT,
             username: 'foo-user',
             password: securePassword,
           })
@@ -181,5 +182,36 @@ describe('/admin', () => {
           }));
       });
     });
+  });
+
+  describe('/delete-user', () => {
+    let cookies;
+    let token;
+    let app;
+    function recordCSRF(response) {
+      ({ cookies, token } = retrieveCsurfData(response));
+    }
+
+    before(() => {
+      app = setupBasicApp({ admin: true });
+
+      app.use(createAdminRouter(successService));
+
+      return request(app)
+        .get('/')
+        .then(recordCSRF);
+    });
+    it('deletes a user', () => request(app)
+      .post('/delete-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        username: 'foo-user',
+      })
+      .expect(302)
+      .then((response) => {
+        expect(response.headers.location).to.equal('/admin');
+      }));
   });
 });

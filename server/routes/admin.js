@@ -33,7 +33,7 @@ module.exports = function Index({ keyVaultService }) {
         expired: countExpired(accounts),
       };
 
-      res.render('pages/admin', { accounts, stats });
+      res.render('pages/admin', { accounts, stats, csrfToken: req.csrfToken() });
     } catch (error) {
       logger.error(error);
       next(error);
@@ -78,6 +78,19 @@ module.exports = function Index({ keyVaultService }) {
         error: true,
         csrfToken: req.csrfToken(),
       });
+    }
+  });
+
+  router.post('/delete-user', async (req, res, next) => {
+    try {
+      const { username } = req.body;
+      logger.info({ username }, 'Deleting');
+      await keyVaultService.deleteUser(req.body.username);
+      logger.info({ username }, 'deleted');
+      res.redirect('/admin');
+    } catch (error) {
+      logger.error(error);
+      next(error);
     }
   });
 
