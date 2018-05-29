@@ -32,7 +32,7 @@ describe('services/keyVault', () => {
       await service.createUser({
         username: 'foo',
         password: 'foo-password',
-        accountType: 'foo user',
+        accountType: 'admin account',
       });
 
       ({ args } = client.setSecret.lastCall);
@@ -50,7 +50,7 @@ describe('services/keyVault', () => {
     });
 
     it('sets the account type', () => {
-      expect(args[3].contentType).to.equal('foo user');
+      expect(args[3].contentType).to.equal('admin account');
     });
   });
 
@@ -59,7 +59,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('foo-password');
       client.getSecret.resolves({
         value: hashedPassword,
-        contentType: 'foo account',
+        contentType: 'admin account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -71,7 +71,7 @@ describe('services/keyVault', () => {
         ok: true,
         data: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-          accountType: 'foo account',
+          accountType: 'admin account',
         },
       });
     });
@@ -87,7 +87,7 @@ describe('services/keyVault', () => {
     it('returns false when the password is wrong', async () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
-        contentType: 'foo account',
+        contentType: 'admin account',
         value: hashedPassword,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
@@ -108,7 +108,7 @@ describe('services/keyVault', () => {
         config.passwordExpirationDuration = 90 * 24 * 3600 * 1000;
         client.getSecret.resolves({
           value: generatePasswordHash('foo-password'),
-          contentType: 'foo account',
+          contentType: 'admin account',
           attributes: {
             expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
           },
@@ -119,7 +119,7 @@ describe('services/keyVault', () => {
           username: 'foo',
           currentPassword: 'foo-password',
           newPassword: 'new-password',
-          accountType: 'foo account',
+          accountType: 'admin account',
         });
 
         ({ args } = client.setSecret.lastCall);
@@ -137,7 +137,7 @@ describe('services/keyVault', () => {
       });
 
       it('sets the account type', () => {
-        expect(args[3].contentType).to.equal('foo account');
+        expect(args[3].contentType).to.equal('admin account');
       });
       it('resets password expiry time', async () => {
         const expires = new Date(args[3].secretAttributes.expires);
@@ -156,7 +156,7 @@ describe('services/keyVault', () => {
         username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
-        accountType: 'foo account',
+        accountType: 'admin account',
       });
 
       expect(result.ok).to.equal(false);
@@ -169,7 +169,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
         value: hashedPassword,
-        contentType: 'foo account',
+        contentType: 'admin account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -180,7 +180,7 @@ describe('services/keyVault', () => {
         username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
-        accountType: 'foo account',
+        accountType: 'admin account',
       });
 
       expect(result.ok).to.equal(false);
@@ -215,13 +215,13 @@ describe('services/keyVault', () => {
           accountType: constants.ADMIN_ACCOUNT,
           username: 'foo-user',
           expires: startOfToday(),
-          expiresPretty: formatDate(startOfToday(), 'MM/DD/YYYY'),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
         },
         {
           accountType: constants.USER_ACCOUNT,
           username: 'bar-user',
           expires: startOfToday(),
-          expiresPretty: formatDate(startOfToday(), 'MM/DD/YYYY'),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
         },
       ]);
     });

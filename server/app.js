@@ -77,6 +77,9 @@ module.exports = function createApp({
   // GovUK Template Configuration
   app.locals.asset_path = '/public/';
 
+  // Expose constants to views
+  app.locals.constants = constants;
+
   // Don't cache dynamic resources
   app.use(helmet.noCache());
 
@@ -132,11 +135,6 @@ module.exports = function createApp({
 
   // Routes
   app.use(authenticationMiddleWare(keyVaultService));
-  // Expose constants to views
-  app.use((req, res, next) => {
-    res.locals.constants = constants;
-    next();
-  });
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
   app.use('/admin', createAdminRouter({ keyVaultService }));

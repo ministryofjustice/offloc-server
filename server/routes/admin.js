@@ -19,7 +19,8 @@ module.exports = function Index({ keyVaultService }) {
     if (res.locals.user.accountType === constants.ADMIN_ACCOUNT) {
       next();
     } else {
-      res.redirect('/');
+      res.status(403);
+      next(new Error('You do not have permission to view this page'));
     }
   });
 
@@ -42,7 +43,6 @@ module.exports = function Index({ keyVaultService }) {
 
   router.get('/add-user', (req, res) => {
     res.render('pages/adminAddUser', {
-      randomPassword: generateRandomPassword(),
       error: false,
       success: false,
       csrfToken: req.csrfToken(),
@@ -51,14 +51,13 @@ module.exports = function Index({ keyVaultService }) {
 
   router.post('/add-user', async (req, res) => {
     const data = req.body;
-
-    logger.debug(data);
+    const password = generateRandomPassword();
 
     try {
       await keyVaultService.createUser({
         username: data.username,
         accountType: data.accountType,
-        password: data.password,
+        password,
       });
 
       res.render('pages/adminAddUser', {
@@ -68,14 +67,13 @@ module.exports = function Index({ keyVaultService }) {
         csrfToken: req.csrfToken(),
         newUser: {
           username: data.username,
-          password: data.password,
+          password,
         },
       });
     } catch (error) {
       logger.error(error);
       res.status(400);
       res.render('pages/adminAddUser', {
-        randomPassword: generateRandomPassword(),
         success: false,
         error: true,
         csrfToken: req.csrfToken(),

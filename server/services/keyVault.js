@@ -138,7 +138,7 @@ async function createKeyVaultService(override) {
           accountType: account.contentType,
           username: (username) ? username[1] : username,
           expires: account.attributes.expires,
-          expiresPretty: formatDate(account.attributes.expires, 'MM/DD/YYYY'),
+          expiresPretty: formatDate(account.attributes.expires, 'DD/MM/YYYY'),
         };
       });
   }

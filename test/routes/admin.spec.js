@@ -35,7 +35,7 @@ const errorService = {
 };
 
 describe('/admin', () => {
-  it('redirects to the route path when the logged in user is not an admin', () => {
+  it('returns a 403 when the logged in user is not an admin', () => {
     const router = createAdminRouter(successService);
     const app = setupBasicApp();
 
@@ -43,16 +43,13 @@ describe('/admin', () => {
 
     return request(app)
       .get('/admin')
-      .expect(302)
-      .then((response) => {
-        expect(response.headers.location).to.equal('/');
-      });
+      .expect(403);
   });
 
   describe('/', () => {
     it('displays a list of users', () => {
       const router = createAdminRouter(successService);
-      const app = setupBasicApp({ accountType: constants.ADMIN_ACCOUNT });
+      const app = setupBasicApp({ admin: true });
 
       app.use(router);
 
@@ -71,7 +68,7 @@ describe('/admin', () => {
 
     it('displays some basic stats about users', () => {
       const router = createAdminRouter(successService);
-      const app = setupBasicApp({ accountType: constants.ADMIN_ACCOUNT });
+      const app = setupBasicApp({ admin: true });
 
       app.use(router);
 
@@ -92,7 +89,7 @@ describe('/admin', () => {
     describe('#GET', () => {
       it('displays a randomly generated password in the password input', () => {
         const router = createAdminRouter(successService);
-        const app = setupBasicApp({ accountType: constants.ADMIN_ACCOUNT });
+        const app = setupBasicApp({ admin: true });
 
         app.use(router);
 
@@ -122,7 +119,7 @@ describe('/admin', () => {
       describe('when a valid form is submitted', () => {
         let app;
         before(() => {
-          app = setupBasicApp({ accountType: constants.ADMIN_ACCOUNT });
+          app = setupBasicApp({ admin: true });
 
           app.use(createAdminRouter(successService));
 
@@ -139,30 +136,27 @@ describe('/admin', () => {
             _csrf: token,
             accountType: constants.ADMIN_ACCOUNT,
             username: 'foo-user',
-            password: securePassword,
           })
           .expect(200)
           .then((response) => {
             const { createUser } = successService.keyVaultService;
-            expect(createUser.lastCall.args[0])
-              .to.eql({
-                accountType: constants.ADMIN_ACCOUNT,
-                username: 'foo-user',
-                password: securePassword,
-              });
+            const chars16Long = /^[\w]{0,16}$/;
+
+            expect(createUser.lastCall.args[0].accountType).to.equal(constants.ADMIN_ACCOUNT);
+            expect(createUser.lastCall.args[0].username).to.equal('foo-user');
+            expect(createUser.lastCall.args[0].password).to.match(chars16Long);
 
             const $ = cheerio.load(response.text);
 
             expect($('.govuk-box-highlight').text()).to.include('User was successfully added');
             expect($('.govuk-box-highlight').text()).to.include('foo-user');
-            expect($('.govuk-box-highlight').text()).to.include(securePassword);
           }));
       });
 
       describe('when something goes wrong with the service', () => {
         let app;
         before(() => {
-          app = setupBasicApp({ accountType: constants.ADMIN_ACCOUNT });
+          app = setupBasicApp({ admin: true });
 
           app.use(createAdminRouter(errorService));
 
@@ -177,7 +171,7 @@ describe('/admin', () => {
           .set('Cookie', cookies)
           .send({
             _csrf: token,
-            accountType: constants.ADMIN_ACCOUNT,
+            admin: true,
             username: 'foo-user',
             password: securePassword,
           })

@@ -68,7 +68,20 @@ $path: "/public/images/"
   display: inline-block
   margin: 0 0.5em
 
+.nav-link::after
+  content: " "
+  border-left: 2px solid white
+  margin: 0 0.5em 0 1em
+
+.nav-link:last-child::after
+  content: ""
+  border-left: none
+  margin: 0
+
 // Utility classes
+.u-margin-bottom-medium
+  margin-bottom: 1em
+
 .u-no-margin-bottom
   margin-bottom: 0
 

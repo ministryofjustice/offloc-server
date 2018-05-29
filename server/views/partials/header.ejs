@@ -13,7 +13,6 @@
         <strong class="header-username"><%= locals.user.username %></strong>
         <% if (locals.user.accountType === locals.constants.ADMIN_ACCOUNT) {%>
           <a class="nav-link" href="<%= locals.constants.routes.ADMIN %>">Dashboard</a>
-          <span>|</span>
         <% } %>
         <a class="nav-link" href="<%= locals.constants.routes.CHANGE_PASSWORD %>">Change password</a>
       </div>

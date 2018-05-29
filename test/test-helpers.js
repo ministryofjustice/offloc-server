@@ -38,7 +38,7 @@ function createBlobServiceError() {
   };
 }
 
-function setupBasicApp({ accountType } = {}) {
+function setupBasicApp({ admin } = { admin: false }) {
   const app = express();
   app.set('views', path.join(__dirname, '../server/views'));
   app.set('view engine', 'ejs');
@@ -53,7 +53,7 @@ function setupBasicApp({ accountType } = {}) {
   app.use((req, res, next) => {
     res.locals.user = {
       username: 'foo',
-      accountType: accountType || constants.USER_ACCOUNT,
+      accountType: admin ? constants.ADMIN_ACCOUNT : constants.USER_ACCOUNT,
     };
     res.locals.version = 'foo';
     res.locals.constants = constants;
