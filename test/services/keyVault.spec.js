@@ -1,7 +1,11 @@
 const bcrypt = require('bcrypt');
+const formatDate = require('date-fns/format');
+const startOfToday = require('date-fns/start_of_today');
 
 const createKeyVaultService = require('../../server/services/keyVault');
 const config = require('../../server/config');
+const constants = require('../../server/constants/app');
+
 
 function generatePasswordHash(password) {
   // Fixed salt with low number of rounds so things go faster
@@ -12,7 +16,11 @@ describe('services/keyVault', () => {
   let client;
   let service;
   beforeEach(async () => {
-    client = { getSecret: sinon.stub(), setSecret: sinon.stub() };
+    client = {
+      getSecret: sinon.stub(),
+      setSecret: sinon.stub(),
+      getSecrets: sinon.stub(),
+    };
     service = await createKeyVaultService(client);
   });
 
@@ -21,7 +29,11 @@ describe('services/keyVault', () => {
     beforeEach(async () => {
       client.setSecret.resolves(true);
 
-      await service.createUser('foo', 'foo-password');
+      await service.createUser({
+        username: 'foo',
+        password: 'foo-password',
+        accountType: 'admin account',
+      });
 
       ({ args } = client.setSecret.lastCall);
     });
@@ -36,6 +48,10 @@ describe('services/keyVault', () => {
       const expires = new Date(args[3].secretAttributes.expires);
       expect(+expires).to.be.closeTo(+new Date(), 20 * 1000);
     });
+
+    it('sets the account type', () => {
+      expect(args[3].contentType).to.equal('admin account');
+    });
   });
 
   describe('.validateUser', () => {
@@ -43,6 +59,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('foo-password');
       client.getSecret.resolves({
         value: hashedPassword,
+        contentType: 'admin account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -50,7 +67,13 @@ describe('services/keyVault', () => {
 
       const exists = await service.validateUser('foo', 'foo-password');
 
-      expect(exists).to.eql({ ok: true, data: { expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)' } });
+      expect(exists).to.eql({
+        ok: true,
+        data: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          accountType: 'admin account',
+        },
+      });
     });
 
     it('returns false when there is an error with authentication', async () => {
@@ -64,6 +87,7 @@ describe('services/keyVault', () => {
     it('returns false when the password is wrong', async () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
+        contentType: 'admin account',
         value: hashedPassword,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
@@ -84,15 +108,18 @@ describe('services/keyVault', () => {
         config.passwordExpirationDuration = 90 * 24 * 3600 * 1000;
         client.getSecret.resolves({
           value: generatePasswordHash('foo-password'),
+          contentType: 'admin account',
           attributes: {
             expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
           },
         });
         client.setSecret.resolves(true);
 
-        result = await service.updatePassword('foo', {
+        result = await service.updatePassword({
+          username: 'foo',
           currentPassword: 'foo-password',
           newPassword: 'new-password',
+          accountType: 'admin account',
         });
 
         ({ args } = client.setSecret.lastCall);
@@ -108,6 +135,10 @@ describe('services/keyVault', () => {
       it('sets new password hash', async () => {
         expect(bcrypt.compareSync('new-password', args[2])).to.equal(true);
       });
+
+      it('sets the account type', () => {
+        expect(args[3].contentType).to.equal('admin account');
+      });
       it('resets password expiry time', async () => {
         const expires = new Date(args[3].secretAttributes.expires);
         expect(+expires).to.be.closeTo(
@@ -121,9 +152,11 @@ describe('services/keyVault', () => {
       client.getSecret.rejects({ status: 404 });
       client.setSecret.resolves(true);
 
-      const result = await service.updatePassword('foo', {
+      const result = await service.updatePassword({
+        username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
+        accountType: 'admin account',
       });
 
       expect(result.ok).to.equal(false);
@@ -136,21 +169,61 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
         value: hashedPassword,
+        contentType: 'admin account',
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
       });
       client.setSecret.resolves(true);
 
-      const result = await service.updatePassword('foo', {
+      const result = await service.updatePassword({
+        username: 'foo',
         currentPassword: 'foo-password',
         newPassword: 'new-password',
+        accountType: 'admin account',
       });
 
       expect(result.ok).to.equal(false);
       expect(result.errors.length).to.equal(1);
 
       expect(client.setSecret.callCount).to.equal(0);
+    });
+  });
+
+  describe('.listUsers', () => {
+    it('returns a list of users', async () => {
+      client.getSecrets.resolves([
+        {
+          id: 'http://vault.com/secrets/foo-user',
+          contentType: constants.ADMIN_ACCOUNT,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+        {
+          id: 'http://vault.com/secrets/bar-user',
+          contentType: constants.USER_ACCOUNT,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+      ]);
+
+      const result = await service.listUsers();
+      expect(result).eql([
+        {
+          accountType: constants.ADMIN_ACCOUNT,
+          username: 'foo-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+        },
+        {
+          accountType: constants.USER_ACCOUNT,
+          username: 'bar-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+        },
+      ]);
     });
   });
 });

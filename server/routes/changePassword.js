@@ -17,9 +17,8 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
 
   router.post('/', async (req, res, next) => {
     try {
-      const username = res.locals.user;
+      const { user } = res.locals;
       const passwordCheck = passwordValidationService.validateInput(req.body);
-
       if (!passwordCheck.ok) {
         logger.info(passwordCheck.errors, 'password requirements unmet');
         res.status(400);
@@ -31,10 +30,14 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
           },
         });
       }
-      const result = await keyVaultService.updatePassword(username, passwordCheck.data);
+      const result = await keyVaultService.updatePassword({
+        username: user.username,
+        accountType: user.accountType,
+        ...passwordCheck.data,
+      });
 
       if (!result.ok) {
-        logger.info({ user: username }, 'Invalid credentials');
+        logger.info({ user: user.username }, 'Invalid credentials');
         res.status(401);
         return res.render('pages/changePassword', {
           csrfToken: req.csrfToken(),

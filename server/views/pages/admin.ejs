@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <% include ../partials/head %>
+</head>
+<body>
+
+    <% include ../partials/header %>
+
+    <main id="content" class="app-container" role="main">
+      <div class="grid-row">
+        <div class="column-full">
+          <h1 class="heading-large">Dashboard</h1>
+
+          <div class=="grid-rowgrid-row">
+          <div class="column-one-quarter">
+              <div class="panel panel-border-wide">
+                <div class="data">
+                  <span id="total-users-count" class="data-item bold-xxlarge"><%= accounts.length %></span>
+                  <span class="data-item bold-xsmall">Total accounts</span>
+                </div>
+              </div>
+            </div>
+            <div class="column-one-quarter">
+              <div class="panel panel-border-wide">
+                <div class="data">
+                  <span id="users-count" class="data-item bold-xxlarge"><%= stats.users %></span>
+                  <span class="data-item bold-xsmall">Standard accounts</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="column-one-quarter">
+              <div class="panel panel-border-wide">
+                <div class="data">
+                  <span id="admin-count" class="data-item bold-xxlarge"><%= stats.admin %></span>
+                  <span class="data-item bold-xsmall">Adminstrator accounts</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="column-one-quarter">
+              <div class="panel panel-border-wide">
+                <div class="data">
+                  <span id="expired-count" class="data-item bold-xxlarge"><%= stats.expired %></span>
+                  <span class="data-item bold-xsmall">Expired accounts</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+
+      <div class="grid-row">
+        <div class="column-two-thirds">
+          <h2 class="heading-large">Users List</h2>
+        </div>
+        <div class="column-one-third">
+          <a href="/admin/add-user" class="button button--title u-float-right">Add new User</a>
+        </div>
+      </div>
+      <div class="grid-row">
+        <div class="column-full">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Type</th>
+                <th scope="col">Password expiry</th>
+                <th class="numeric" scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% accounts.forEach(function(account) { %>
+                <tr scope="row">
+                  <td><%= account.username %></td>
+                  <td><%= account.accountType %></td>
+                  <td><%= account.expiresPretty %></td>
+                  <td class="numeric">
+                    <% if(locals.user.username !== account.username) {%>
+                      <a href="#">Reset password</a>
+                      &nbsp;&nbsp;
+                      <a href="#">Delete</a>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <% include ../partials/footer %>
+</body>
+</html>

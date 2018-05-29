@@ -13,11 +13,14 @@ const bunyanMiddleware = require('bunyan-middleware');
 const logger = require('./loggers/logger.js');
 
 const config = require('./config');
+const constants = require('./constants/app');
+
 const { authenticationMiddleWare, passwordExpiredMiddleWare } = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
 const createChangePasswordRouter = require('./routes/changePassword');
+const createAdminRouter = require('./routes/admin');
 
 const version = Date.now().toString();
 
@@ -74,12 +77,8 @@ module.exports = function createApp({
   // GovUK Template Configuration
   app.locals.asset_path = '/public/';
 
-  function addTemplateVariables(req, res, next) {
-    res.locals.user = req.user;
-    next();
-  }
-
-  app.use(addTemplateVariables);
+  // Expose constants to views
+  app.locals.constants = constants;
 
   // Don't cache dynamic resources
   app.use(helmet.noCache());
@@ -138,6 +137,7 @@ module.exports = function createApp({
   app.use(authenticationMiddleWare(keyVaultService));
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
+  app.use('/admin', createAdminRouter({ keyVaultService }));
   app.use('/', createIndexRouter({ storageService }));
 
   app.use('*', (req, res) => {

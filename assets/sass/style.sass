@@ -32,7 +32,7 @@ $path: "/public/images/"
 .header-username::after
   content: " "
   border-left: 2px solid white
-  margin: 0 25px
+  margin: 0 0.5em 0 1em
 
 .header-user
   & a:link, & a:visited
@@ -60,6 +60,39 @@ $path: "/public/images/"
 .error-summary-list
   list-style: none
 
+
+.button--title
+  margin-top: 2.5em
+
+.nav-link
+  display: inline-block
+  margin: 0 0.5em
+
+.nav-link::after
+  content: " "
+  border-left: 2px solid white
+  margin: 0 0.5em 0 1em
+
+.nav-link:last-child::after
+  content: ""
+  border-left: none
+  margin: 0
+
 // Utility classes
+.u-margin-bottom-medium
+  margin-bottom: 1em
+
 .u-no-margin-bottom
   margin-bottom: 0
+
+.u-no-margin-top
+  margin-top: 0
+
+.u-no-margin
+  margin: 0
+
+.u-float-right
+  float: right
+
+.u-ta-left
+  text-align: left

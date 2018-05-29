@@ -5,6 +5,9 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const csurf = require('csurf');
 const bodyParser = require('body-parser');
+const cheerio = require('cheerio');
+
+const constants = require('../server/constants/app');
 
 function binaryParser(res, callback) {
   res.setEncoding('binary');
@@ -35,7 +38,7 @@ function createBlobServiceError() {
   };
 }
 
-function setupBasicApp() {
+function setupBasicApp({ admin } = { admin: false }) {
   const app = express();
   app.set('views', path.join(__dirname, '../server/views'));
   app.set('view engine', 'ejs');
@@ -48,11 +51,23 @@ function setupBasicApp() {
   app.use(csurf({ cookie: true }));
 
   app.use((req, res, next) => {
-    res.locals.user = 'foo';
+    res.locals.user = {
+      username: 'foo',
+      accountType: admin ? constants.ADMIN_ACCOUNT : constants.USER_ACCOUNT,
+    };
     res.locals.version = 'foo';
+    res.locals.constants = constants;
     next();
   });
   return app;
+}
+
+function retrieveCsurfData(response) {
+  const cookies = response.headers['set-cookie'];
+  const $ = cheerio.load(response.text);
+  const token = $('[name=_csrf]').val();
+
+  return { cookies, token };
 }
 
 
@@ -61,4 +76,5 @@ module.exports = {
   binaryParser,
   createBlobServiceSuccess,
   createBlobServiceError,
+  retrieveCsurfData,
 };

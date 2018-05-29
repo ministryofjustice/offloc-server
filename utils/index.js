@@ -3,13 +3,10 @@
 const fs = require('fs');
 const { dirname } = require('path');
 const mkdirp = require('mkdirp');
+const isPast = require('date-fns/is_past');
 
 module.exports.isExpired = function isExpired(dateTimeString) {
-  const expiryTime = new Date(dateTimeString);
-  const currentTime = new Date();
-  const diff = currentTime - expiryTime;
-
-  return diff >= 0;
+  return isPast(dateTimeString);
 };
 
 module.exports.recordBuildInfoTo = function recordBuildInfoTo(target, contents, callback) {

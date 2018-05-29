@@ -1,9 +1,10 @@
 const request = require('supertest');
 const cheerio = require('cheerio');
 
-const { setupBasicApp } = require('../test-helpers');
+const { setupBasicApp, retrieveCsurfData } = require('../test-helpers');
 const createChangePasswordRouter = require('../../server/routes/changePassword');
 const passwordValidationService = require('../../server/services/passwordValidation');
+const constants = require('../../server/constants/app');
 
 const successService = {
   keyVaultService: {
@@ -51,9 +52,7 @@ describe('/change-password', () => {
     let cookies;
     let token;
     function recordCSRF(response) {
-      cookies = response.headers['set-cookie'];
-      const $ = cheerio.load(response.text);
-      token = $('[name=_csrf]').val();
+      ({ cookies, token } = retrieveCsurfData(response));
     }
 
     describe('when a valid form is submitted', () => {
@@ -85,9 +84,12 @@ describe('/change-password', () => {
           .then((response) => {
             const { updatePassword } = successService.keyVaultService;
             expect(updatePassword.lastCall.args[0])
-              .to.equal('foo');
-            expect(updatePassword.lastCall.args[1])
-              .to.eql({ currentPassword: 'foobar', newPassword: securePassword });
+              .to.eql({
+                username: 'foo',
+                accountType: constants.USER_ACCOUNT,
+                currentPassword: 'foobar',
+                newPassword: securePassword,
+              });
             expect(response.header.location)
               .to.equal('/change-password/confirmation');
           });

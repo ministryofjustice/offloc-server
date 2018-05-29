@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <% include ../partials/head %>
+  </head>
+  <body>
+
+    <% include ../partials/header %>
+
+    <main id="content" class="app-container" role="main">
+      <div class="grid-row">
+        <div class="column-two-thirds">
+          <h1 class="heading-large">Add user</h1>
+
+          <form class="form" action="/admin/add-user" method="POST">
+            <% if (success) { %>
+              <div class="govuk-box-highlight u-ta-left">
+                <h2 class="heading-medium u-no-margin-top">User was successfully added</h2>
+                <p class="u-no-margin"><strong>Username:</strong> <%= newUser.username %></p>
+                <p><strong>Password:</strong> <%= newUser.password %></p>
+                <div class="notice">
+                  <i class="icon icon-important">
+                    <span class="visually-hidden">Warning</span>
+                  </i>
+                  <strong class="bold-small">
+                    The password above will not be shown again.
+                    Once the user logs in they will be asked to reset their passwords.
+                  </strong>
+                </div>
+              </div>
+            <% }%>
+
+            <% if (error) { %>
+              <div class="error-summary" role="alert" aria-labelledby="error-summary-heading-2" tabindex="-1">
+                <h2 class="heading-medium error-summary-heading u-no-margin-bottom" id="error-summary-heading-2">
+                  Something went wrong! Please try again later.
+                </h2>
+              </div>
+            <% }%>
+
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-group">
+              <label class="form-label" for="accountType">Account Type</label>
+              <select class="form-control" id="accountType" name="accountType" required>
+                <option value="<%= locals.constants.USER_ACCOUNT %>">User account</option>
+                <option value="<%= locals.constants.ADMIN_ACCOUNT %>">Admin account</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="username">Username</label>
+              <input class="form-control" id="username" name="username" type="text" required />
+            </div>
+
+            <div class="panel panel-border-wide u-margin-bottom-medium">
+              <strong>A password will be generated upon successful submition.</strong>
+            </div>
+
+            <button class="button" type="submit">Add new user</button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <% include ../partials/footer %>
+  </body>
+</html>

@@ -20,7 +20,8 @@ function authenticationMiddleWare(service) {
         if (isExpired(user.data.expires)) {
           res.locals.passwordExpired = true;
         }
-        res.locals.user = auth.name;
+        res.locals.user = { username: auth.name, accountType: user.data.accountType };
+
         return next();
       }
     } catch (expectation) {

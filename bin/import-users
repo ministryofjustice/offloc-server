@@ -58,9 +58,9 @@ fs.readFile(targetPath, async (err, data) => {
 
 
 function createUsers(users, service) {
-  return users.map(({ username, password }) => {
+  return users.map(({ username, password, accountType }) => {
     log.debug({ user: username }, 'Adding user to keyVault');
-    const promise = service.createUser(username, password);
+    const promise = service.createUser({ username, password, accountType });
 
     return timeout(promise, REQUEST_TIMEOUT)
       .then((secret) => {
