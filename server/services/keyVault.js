@@ -35,6 +35,7 @@ async function createKeyVaultService(override) {
     validateUser,
     updatePassword,
     listUsers,
+    deleteUser,
   };
 
   function createUser({ username, password, accountType }) {
@@ -105,6 +106,10 @@ async function createKeyVaultService(override) {
 
   function getUser(name) {
     return client.getSecret(keyVaultUri, name, '');
+  }
+
+  function deleteUser(name) {
+    return client.deleteSecret(keyVaultUri, name);
   }
 
   async function setUser({

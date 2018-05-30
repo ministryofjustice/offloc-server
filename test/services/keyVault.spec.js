@@ -20,6 +20,7 @@ describe('services/keyVault', () => {
       getSecret: sinon.stub(),
       setSecret: sinon.stub(),
       getSecrets: sinon.stub(),
+      deleteSecret: sinon.stub(),
     };
     service = await createKeyVaultService(client);
   });
@@ -224,6 +225,20 @@ describe('services/keyVault', () => {
           expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
         },
       ]);
+    });
+  });
+
+  describe('.deleteUsers', () => {
+    it('removes a user form from the keyVault', async () => {
+      client.deleteSecret.returns({
+        id: 'https://service.vault.azure.net/secrets/test2/62e45c37593b400f8415db21a0a4557b',
+        contentType: 'user account',
+        attributes: { },
+      });
+
+      await service.deleteUser('foo-user');
+
+      expect(client.deleteSecret.args[0][1]).to.equal('foo-user');
     });
   });
 });
