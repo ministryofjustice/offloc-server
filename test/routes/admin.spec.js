@@ -8,6 +8,7 @@ const { setupBasicApp, retrieveCsurfData } = require('../test-helpers');
 const createAdminRouter = require('../../server/routes/admin');
 const constants = require('../../server/constants/app');
 
+const chars16Long = /^[\w]{0,16}$/;
 const successService = {
   keyVaultService: {
     listUsers: sinon.stub().returns([
@@ -26,6 +27,9 @@ const successService = {
     ]),
     createUser: sinon.stub().returns(true),
     deleteUser: sinon.stub().returns(true),
+    getUser: sinon.stub().returns({
+      contentType: constants.USER_ACCOUNT,
+    }),
   },
 };
 
@@ -100,7 +104,6 @@ describe('/admin', () => {
           .expect(200)
           .then((response) => {
             const $ = cheerio.load(response.text);
-            const chars16Long = /^[\w]{0,16}$/;
             const autoGenPassword = $('input#password').val();
 
             expect($('h1.heading-large').text()).to.equal('Add user');
@@ -129,29 +132,29 @@ describe('/admin', () => {
             .then(recordCSRF);
         });
 
-        it('add a new user', () => request(app)
-          .post('/add-user')
-          .type('form')
-          .set('Cookie', cookies)
-          .send({
-            _csrf: token,
-            accountType: constants.ADMIN_ACCOUNT,
-            username: 'foo-user',
-          })
-          .expect(200)
-          .then((response) => {
-            const { createUser } = successService.keyVaultService;
-            const chars16Long = /^[\w]{0,16}$/;
+        it('add a new user', () =>
+          request(app)
+            .post('/add-user')
+            .type('form')
+            .set('Cookie', cookies)
+            .send({
+              _csrf: token,
+              accountType: constants.ADMIN_ACCOUNT,
+              username: 'foo-user',
+            })
+            .expect(200)
+            .then((response) => {
+              const { createUser } = successService.keyVaultService;
 
-            expect(createUser.lastCall.args[0].accountType).to.equal(constants.ADMIN_ACCOUNT);
-            expect(createUser.lastCall.args[0].username).to.equal('foo-user');
-            expect(createUser.lastCall.args[0].password).to.match(chars16Long);
+              expect(createUser.lastCall.args[0].accountType).to.equal(constants.ADMIN_ACCOUNT);
+              expect(createUser.lastCall.args[0].username).to.equal('foo-user');
+              expect(createUser.lastCall.args[0].password).to.match(chars16Long);
 
-            const $ = cheerio.load(response.text);
+              const $ = cheerio.load(response.text);
 
-            expect($('.govuk-box-highlight').text()).to.include('User was successfully added');
-            expect($('.govuk-box-highlight').text()).to.include('foo-user');
-          }));
+              expect($('.govuk-box-highlight').text()).to.include('User was successfully added');
+              expect($('.govuk-box-highlight').text()).to.include('foo-user');
+            }));
       });
 
       describe('when something goes wrong with the service', () => {
@@ -166,20 +169,21 @@ describe('/admin', () => {
             .then(recordCSRF);
         });
 
-        it('notifies the user with an error', () => request(app)
-          .post('/add-user')
-          .type('form')
-          .set('Cookie', cookies)
-          .send({
-            _csrf: token,
-            accountType: constants.ADMIN_ACCOUNT,
-            username: 'foo-user',
-            password: securePassword,
-          })
-          .expect(400)
-          .then((response) => {
-            expect(response.text).to.include('class="error-summary"');
-          }));
+        it('notifies the user with an error', () =>
+          request(app)
+            .post('/add-user')
+            .type('form')
+            .set('Cookie', cookies)
+            .send({
+              _csrf: token,
+              accountType: constants.ADMIN_ACCOUNT,
+              username: 'foo-user',
+              password: securePassword,
+            })
+            .expect(400)
+            .then((response) => {
+              expect(response.text).to.include('class="error-summary"');
+            }));
       });
     });
   });
@@ -201,17 +205,69 @@ describe('/admin', () => {
         .get('/')
         .then(recordCSRF);
     });
-    it('deletes a user', () => request(app)
-      .post('/delete-user')
-      .type('form')
-      .set('Cookie', cookies)
-      .send({
-        _csrf: token,
-        username: 'foo-user',
-      })
-      .expect(302)
-      .then((response) => {
-        expect(response.headers.location).to.equal('/admin');
-      }));
+    it('deletes a user', () =>
+      request(app)
+        .post('/delete-user')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+          username: 'foo-user',
+        })
+        .expect(302)
+        .then((response) => {
+          expect(response.headers.location).to.equal('/admin');
+        }));
+  });
+
+  describe('/reset-password', () => {
+    let cookies;
+    let token;
+    let app;
+    function recordCSRF(response) {
+      ({ cookies, token } = retrieveCsurfData(response));
+    }
+
+    before(() => {
+      app = setupBasicApp({ admin: true });
+
+      app.use(createAdminRouter(successService));
+
+      return request(app)
+        .get('/')
+        .then(recordCSRF);
+    });
+
+    it('Resets a users password', () =>
+      request(app)
+        .post('/reset-password')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+          username: 'foo-user',
+        })
+        .expect(200)
+        .then((response) => {
+          const createUserCalls = successService.keyVaultService.createUser.lastCall;
+          const getUserCall = successService.keyVaultService.getUser.lastCall;
+
+          expect(getUserCall.args[0]).to.equal('foo-user');
+          expect(createUserCalls.args[0].username).to.equal('foo-user');
+          expect(createUserCalls.args[0].accountType).to.equal('user account');
+          expect(createUserCalls.args[0].password).to.match(chars16Long);
+
+          expect(response.text).to.include('User password was successfully reset');
+        }));
+
+    it('returns a 404 when a username is not specified', () =>
+      request(app)
+        .post('/reset-password')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+        })
+        .expect(404));
   });
 });

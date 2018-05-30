@@ -42,7 +42,7 @@ module.exports = function Index({ keyVaultService }) {
 
 
   router.get('/add-user', (req, res) => {
-    res.render('pages/adminAddUser', {
+    res.render('pages/addUser', {
       error: false,
       success: false,
       csrfToken: req.csrfToken(),
@@ -60,7 +60,7 @@ module.exports = function Index({ keyVaultService }) {
         password,
       });
 
-      res.render('pages/adminAddUser', {
+      res.render('pages/addUser', {
         randomPassword: generateRandomPassword(),
         error: false,
         success: true,
@@ -73,7 +73,7 @@ module.exports = function Index({ keyVaultService }) {
     } catch (error) {
       logger.error(error);
       res.status(400);
-      res.render('pages/adminAddUser', {
+      res.render('pages/addUser', {
         success: false,
         error: true,
         csrfToken: req.csrfToken(),
@@ -91,6 +91,31 @@ module.exports = function Index({ keyVaultService }) {
     } catch (error) {
       logger.error(error);
       next(error);
+    }
+  });
+
+
+  router.post('/reset-password', async (req, res, next) => {
+    const { username } = req.body;
+
+    if (!username) {
+      res.status(404);
+      return next();
+    }
+
+    const password = generateRandomPassword();
+    const user = await keyVaultService.getUser(username);
+
+    try {
+      await keyVaultService.createUser({
+        username,
+        accountType: user.contentType,
+        password,
+      });
+      return res.render('pages/resetPasswordConfirmation', { username, password });
+    } catch (error) {
+      logger.error(error);
+      return next(error);
     }
   });
 
