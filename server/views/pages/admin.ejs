@@ -81,8 +81,13 @@
                   <td><%= account.expiresPretty %></td>
                   <td class="numeric">
                     <% if(locals.user.username !== account.username) {%>
-                      <a class="button u-margin-right-medium" href="#">Edit</a>
-                      <form class="u-float-right" method="POST" action="/admin/delete-user" onsubmit="return confirm('Are you sure you want to delete <%= account.username%> ?');">
+                      <form class="u-display-ib u-margin-right-medium" method="POST" action="/admin/reset-password" onsubmit="return confirm('Are you sure you want to reset the password for <%= account.username%> ?');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="username" value="<%= account.username %>" />
+                        <button class="button" type="submit">Reset password</button>
+                      </form>
+
+                      <form class="u-display-ib" method="POST" action="/admin/delete-user" onsubmit="return confirm('Are you sure you want to delete <%= account.username%> ?');">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="username" value="<%= account.username %>" />
                         <button class="button" type="submit">Delete</button>

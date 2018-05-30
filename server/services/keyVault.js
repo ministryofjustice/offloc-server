@@ -36,6 +36,7 @@ async function createKeyVaultService(override) {
     updatePassword,
     listUsers,
     deleteUser,
+    getUser,
   };
 
   function createUser({ username, password, accountType }) {
