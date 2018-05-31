@@ -81,6 +81,20 @@
                   <td><%= account.expiresPretty %></td>
                   <td class="numeric">
                     <% if(locals.user.username !== account.username) {%>
+                      <% if (account.disabled) {%>
+                        <form class="u-display-ib u-margin-right-medium" method="POST" action="/admin/enable-user" onsubmit="return confirm('You are about the re-enable the following account: <%= account.username%> \n Do you want to procced?');">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <input type="hidden" name="username" value="<%= account.username %>" />
+                          <button class="button" type="submit">Enable account</button>
+                        </form>
+                      <%} else {%>
+                        <form class="u-display-ib u-margin-right-medium" method="POST" action="/admin/disable-user" onsubmit="return confirm('Are you sure you want to disable the account: <%= account.username%> ?');">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <input type="hidden" name="username" value="<%= account.username %>" />
+                          <button class="button" type="submit">Disable account</button>
+                        </form>
+                      <% } %>
+
                       <form class="u-display-ib u-margin-right-medium" method="POST" action="/admin/reset-password" onsubmit="return confirm('Are you sure you want to reset the password for <%= account.username%> ?');">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="username" value="<%= account.username %>" />

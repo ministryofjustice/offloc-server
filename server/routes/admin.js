@@ -107,9 +107,11 @@ module.exports = function Index({ keyVaultService }) {
     const user = await keyVaultService.getUser(username);
 
     try {
+      const { accountType } = JSON.parse(user.contentType);
+
       await keyVaultService.createUser({
         username,
-        accountType: user.contentType,
+        accountType,
         password,
       });
       return res.render('pages/resetPasswordConfirmation', { username, password });
@@ -118,6 +120,41 @@ module.exports = function Index({ keyVaultService }) {
       return next(error);
     }
   });
+
+  router.post('/disable-user', async (req, res, next) => {
+    const { username } = req.body;
+
+    if (!username) {
+      res.status(404);
+      return next();
+    }
+
+    try {
+      await keyVaultService.disableUser(username);
+      return res.redirect('/admin');
+    } catch (error) {
+      logger.error(error);
+      return next(error);
+    }
+  });
+
+  router.post('/enable-user', async (req, res, next) => {
+    const { username } = req.body;
+
+    if (!username) {
+      res.status(404);
+      return next();
+    }
+
+    try {
+      await keyVaultService.enableUser(username);
+      return res.redirect('/admin');
+    } catch (error) {
+      logger.error(error);
+      return next(error);
+    }
+  });
+
 
   return router;
 };

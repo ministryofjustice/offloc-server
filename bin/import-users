@@ -38,7 +38,7 @@ fs.readFile(targetPath, async (err, data) => {
   }
   try {
     const users = JSON.parse(data.toString());
-    const service = createKeyVaultService();
+    const service = await createKeyVaultService();
 
     const response = await Promise.all(createUsers(users, service));
     const successes = numOfSuccessfulOps(response);

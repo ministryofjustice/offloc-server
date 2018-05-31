@@ -28,8 +28,13 @@ const successService = {
     createUser: sinon.stub().returns(true),
     deleteUser: sinon.stub().returns(true),
     getUser: sinon.stub().returns({
-      contentType: constants.USER_ACCOUNT,
+      contentType: JSON.stringify({
+        accountType: constants.USER_ACCOUNT,
+        disabled: false,
+      }),
     }),
+    disableUser: sinon.stub().returns(true),
+    enableUser: sinon.stub().returns(true),
   },
 };
 
@@ -263,6 +268,98 @@ describe('/admin', () => {
     it('returns a 404 when a username is not specified', () =>
       request(app)
         .post('/reset-password')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+        })
+        .expect(404));
+  });
+
+  describe('/disable-user', () => {
+    let cookies;
+    let token;
+    let app;
+    function recordCSRF(response) {
+      ({ cookies, token } = retrieveCsurfData(response));
+    }
+
+    before(() => {
+      app = setupBasicApp({ admin: true });
+
+      app.use(createAdminRouter(successService));
+
+      return request(app)
+        .get('/')
+        .then(recordCSRF);
+    });
+
+    it('Disables a user', () =>
+      request(app)
+        .post('/disable-user')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+          username: 'foo-user',
+        })
+        .expect(302)
+        .then((response) => {
+          const disableUserCall = successService.keyVaultService.disableUser.lastCall;
+
+          expect(disableUserCall.args[0]).to.equal('foo-user');
+          expect(response.headers.location).to.equal('/admin');
+        }));
+
+    it('returns a 404 when a username is not specified', () =>
+      request(app)
+        .post('/disable-user')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+        })
+        .expect(404));
+  });
+
+  describe('/enable-user', () => {
+    let cookies;
+    let token;
+    let app;
+    function recordCSRF(response) {
+      ({ cookies, token } = retrieveCsurfData(response));
+    }
+
+    before(() => {
+      app = setupBasicApp({ admin: true });
+
+      app.use(createAdminRouter(successService));
+
+      return request(app)
+        .get('/')
+        .then(recordCSRF);
+    });
+
+    it('Enables a user', () =>
+      request(app)
+        .post('/enable-user')
+        .type('form')
+        .set('Cookie', cookies)
+        .send({
+          _csrf: token,
+          username: 'foo-user',
+        })
+        .expect(302)
+        .then((response) => {
+          const disableUserCall = successService.keyVaultService.disableUser.lastCall;
+
+          expect(disableUserCall.args[0]).to.equal('foo-user');
+          expect(response.headers.location).to.equal('/admin');
+        }));
+
+    it('returns a 404 when a username is not specified', () =>
+      request(app)
+        .post('/enable-user')
         .type('form')
         .set('Cookie', cookies)
         .send({

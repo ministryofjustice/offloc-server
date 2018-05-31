@@ -17,9 +17,14 @@ function authenticationMiddleWare(service) {
       const user = await service.validateUser(auth.name, auth.pass);
 
       if (user.ok) {
+        if (user.data.disabled) {
+          return disabled(res);
+        }
+
         if (isExpired(user.data.expires)) {
           res.locals.passwordExpired = true;
         }
+
         res.locals.user = { username: auth.name, accountType: user.data.accountType };
 
         return next();
@@ -52,6 +57,11 @@ function unauthorized(res) {
   res.set('WWW-Authenticate', 'Basic realm=Password Required');
   res.status(401);
   res.render('pages/denied');
+}
+
+function disabled(res) {
+  res.status(403);
+  res.render('pages/disabled');
 }
 
 

@@ -37,6 +37,8 @@ async function createKeyVaultService(override) {
     listUsers,
     deleteUser,
     getUser,
+    disableUser,
+    enableUser,
   };
 
   function createUser({ username, password, accountType }) {
@@ -56,12 +58,14 @@ async function createKeyVaultService(override) {
       logger.debug({ user: username }, 'Comparing password');
 
       const authenticated = await bcrypt.compare(password, existingHash);
+      const accountData = JSON.parse(contentType);
       let data = null;
 
       if (authenticated) {
         data = {
           expires: attributes.expires,
-          accountType: contentType,
+          accountType: accountData.accountType,
+          disabled: accountData.disabled,
         };
       }
 
@@ -113,6 +117,25 @@ async function createKeyVaultService(override) {
     return client.deleteSecret(keyVaultUri, name);
   }
 
+  async function updateContentType(name, opts) {
+    const user = await getUser(name);
+
+    const contentType = JSON.parse(user.contentType);
+    const updatedContentType = { ...contentType, ...opts };
+
+    return client.updateSecret(keyVaultUri, name, '', {
+      contentType: JSON.stringify(updatedContentType),
+    });
+  }
+
+  function disableUser(name) {
+    return updateContentType(name, { disabled: true });
+  }
+
+  async function enableUser(name) {
+    return updateContentType(name, { disabled: false });
+  }
+
   async function setUser({
     username, password, expiry, accountType,
   }) {
@@ -124,29 +147,51 @@ async function createKeyVaultService(override) {
     };
 
     return client.setSecret(keyVaultUri, username, hashedPassword, {
-      contentType: accountType || constants.USER_ACCOUNT,
+      contentType: JSON.stringify({
+        accountType: accountType || constants.USER_ACCOUNT,
+        disabled: false,
+      }),
       secretAttributes: attributes,
     });
   }
 
   async function listUsers() {
     const secrets = await client.getSecrets(keyVaultUri);
-    const accounts = ({ contentType }) =>
-      contentType === constants.USER_ACCOUNT || contentType === constants.ADMIN_ACCOUNT;
+    const accounts = ({ contentType }) => {
+      const { accountType } = getContentType(contentType);
+      return accountType === constants.USER_ACCOUNT || accountType === constants.ADMIN_ACCOUNT;
+    };
     const getUserName = str => str.match(/\/([\w-_]+)$/);
 
     return secrets
       .filter(accounts)
       .map((account) => {
         const username = getUserName(account.id);
+        const { accountType, disabled } = getContentType(account.contentType);
 
         return {
-          accountType: account.contentType,
+          disabled,
+          accountType,
           username: (username) ? username[1] : username,
           expires: account.attributes.expires,
           expiresPretty: formatDate(account.attributes.expires, 'DD/MM/YYYY'),
         };
       });
+  }
+}
+
+function getContentType(contentType) {
+  try {
+    return JSON.parse(contentType);
+  } catch (exp) {
+    if (contentType === constants.ADMIN_ACCOUNT) {
+      return { accountType: constants.ADMIN_ACCOUNT, disabled: false };
+    }
+    if (contentType === constants.USER_ACCOUNT) {
+      return { accountType: constants.USER_ACCOUNT, disabled: false };
+    }
+
+    return {};
   }
 }
 
