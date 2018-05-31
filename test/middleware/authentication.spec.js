@@ -81,4 +81,29 @@ describe('AuthenticationMiddleware', () => {
         .expect(401);
     });
   });
+
+  it('returns a 403 when a disabled user logs in', () => {
+    const authService = {
+      validateUser: sinon.stub().resolves({
+        ok: true,
+        data: {
+          expires: 'Mon May 21 2100 13:08:20 GMT+0100 (BST)',
+          disabled: true,
+        },
+      }),
+    };
+    const app = setupBasicApp();
+
+    app.get(
+      '/',
+      authenticationMiddleWare(authService),
+      passwordExpiredMiddleWare,
+      simpleRoute,
+    );
+
+    return request(app)
+      .get('/')
+      .auth('the-username', 'the-password')
+      .expect(403);
+  });
 });

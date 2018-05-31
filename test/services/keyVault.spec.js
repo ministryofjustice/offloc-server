@@ -12,15 +12,22 @@ function generatePasswordHash(password) {
   return bcrypt.hashSync(password, '$2b$04$Hh1KRFVlAxhbFCganFbgnu');
 }
 
+const defaultContentType = JSON.stringify({
+  accountType: constants.ADMIN_ACCOUNT,
+  disabled: false,
+});
+
 describe('services/keyVault', () => {
   let client;
   let service;
+
   beforeEach(async () => {
     client = {
       getSecret: sinon.stub(),
       setSecret: sinon.stub(),
       getSecrets: sinon.stub(),
       deleteSecret: sinon.stub(),
+      updateSecret: sinon.stub(),
     };
     service = await createKeyVaultService(client);
   });
@@ -51,7 +58,7 @@ describe('services/keyVault', () => {
     });
 
     it('sets the account type', () => {
-      expect(args[3].contentType).to.equal('admin account');
+      expect(args[3].contentType).to.equal(defaultContentType);
     });
   });
 
@@ -60,7 +67,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('foo-password');
       client.getSecret.resolves({
         value: hashedPassword,
-        contentType: 'admin account',
+        contentType: defaultContentType,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -73,6 +80,7 @@ describe('services/keyVault', () => {
         data: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
           accountType: 'admin account',
+          disabled: false,
         },
       });
     });
@@ -88,7 +96,7 @@ describe('services/keyVault', () => {
     it('returns false when the password is wrong', async () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
-        contentType: 'admin account',
+        contentType: defaultContentType,
         value: hashedPassword,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
@@ -109,7 +117,7 @@ describe('services/keyVault', () => {
         config.passwordExpirationDuration = 90 * 24 * 3600 * 1000;
         client.getSecret.resolves({
           value: generatePasswordHash('foo-password'),
-          contentType: 'admin account',
+          contentType: defaultContentType,
           attributes: {
             expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
           },
@@ -138,7 +146,7 @@ describe('services/keyVault', () => {
       });
 
       it('sets the account type', () => {
-        expect(args[3].contentType).to.equal('admin account');
+        expect(args[3].contentType).to.eql(defaultContentType);
       });
       it('resets password expiry time', async () => {
         const expires = new Date(args[3].secretAttributes.expires);
@@ -170,7 +178,7 @@ describe('services/keyVault', () => {
       const hashedPassword = generatePasswordHash('other-password');
       client.getSecret.resolves({
         value: hashedPassword,
-        contentType: 'admin account',
+        contentType: defaultContentType,
         attributes: {
           expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
         },
@@ -196,14 +204,17 @@ describe('services/keyVault', () => {
       client.getSecrets.resolves([
         {
           id: 'http://vault.com/secrets/foo-user',
-          contentType: constants.ADMIN_ACCOUNT,
+          contentType: defaultContentType,
           attributes: {
             expires: startOfToday(),
           },
         },
         {
           id: 'http://vault.com/secrets/bar-user',
-          contentType: constants.USER_ACCOUNT,
+          contentType: JSON.stringify({
+            accountType: constants.USER_ACCOUNT,
+            disabled: true,
+          }),
           attributes: {
             expires: startOfToday(),
           },
@@ -217,18 +228,20 @@ describe('services/keyVault', () => {
           username: 'foo-user',
           expires: startOfToday(),
           expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+          disabled: false,
         },
         {
           accountType: constants.USER_ACCOUNT,
           username: 'bar-user',
           expires: startOfToday(),
           expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+          disabled: true,
         },
       ]);
     });
   });
 
-  describe('.deleteUsers', () => {
+  describe('.deleteUser', () => {
     it('removes a user form from the keyVault', async () => {
       client.deleteSecret.returns({
         id: 'https://service.vault.azure.net/secrets/test2/62e45c37593b400f8415db21a0a4557b',
@@ -239,6 +252,50 @@ describe('services/keyVault', () => {
       await service.deleteUser('foo-user');
 
       expect(client.deleteSecret.args[0][1]).to.equal('foo-user');
+    });
+  });
+
+  describe('.disableUser', () => {
+    it('disables a user', async () => {
+      client.getSecret.returns({
+        id: 'https://service.vault.azure.net/secrets/test2',
+        contentType: defaultContentType,
+        attributes: { },
+      });
+
+      const expectedContentType = {
+        contentType: JSON.stringify({
+          ...JSON.parse(defaultContentType),
+          disabled: true,
+        }),
+      };
+
+      await service.disableUser('foo-user');
+
+      expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
+      expect(client.updateSecret.lastCall.args[3]).to.eql(expectedContentType);
+    });
+  });
+
+  describe('.enableUser', () => {
+    it('enables a user', async () => {
+      client.getSecret.returns({
+        id: 'https://service.vault.azure.net/secrets/test2',
+        contentType: JSON.stringify({
+          accountType: constants.ADMIN_ACCOUNT,
+          disabled: true,
+        }),
+        attributes: { },
+      });
+
+      const expectedContentType = {
+        contentType: defaultContentType,
+      };
+
+      await service.enableUser('foo-user');
+
+      expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
+      expect(client.updateSecret.lastCall.args[3]).to.eql(expectedContentType);
     });
   });
 });
