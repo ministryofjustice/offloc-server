@@ -60,7 +60,6 @@ function unauthorized(res) {
 }
 
 function disabled(res) {
-  res.set('WWW-Authenticate', 'Basic realm=Access forbidden');
   res.status(403);
   res.render('pages/disabled');
 }

@@ -180,10 +180,17 @@ async function createKeyVaultService(override) {
   }
 }
 
-function getContentType(JSONString) {
+function getContentType(contentType) {
   try {
-    return JSON.parse(JSONString);
+    return JSON.parse(contentType);
   } catch (exp) {
+    if (contentType === constants.ADMIN_ACCOUNT) {
+      return { accountType: constants.ADMIN_ACCOUNT, disabled: false };
+    }
+    if (contentType === constants.USER_ACCOUNT) {
+      return { accountType: constants.USER_ACCOUNT, disabled: false };
+    }
+
     return {};
   }
 }
