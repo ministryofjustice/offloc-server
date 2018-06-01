@@ -58,7 +58,7 @@ async function createKeyVaultService(override) {
       logger.debug({ user: username }, 'Comparing password');
 
       const authenticated = await bcrypt.compare(password, existingHash);
-      const accountData = JSON.parse(contentType);
+      const accountData = getContentType(contentType);
       let data = null;
 
       if (authenticated) {
@@ -120,7 +120,7 @@ async function createKeyVaultService(override) {
   async function updateContentType(name, opts) {
     const user = await getUser(name);
 
-    const contentType = JSON.parse(user.contentType);
+    const contentType = getContentType(user.contentType);
     const updatedContentType = { ...contentType, ...opts };
 
     return client.updateSecret(keyVaultUri, name, '', {

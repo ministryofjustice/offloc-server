@@ -107,6 +107,28 @@ describe('services/keyVault', () => {
 
       expect(exists).to.eql({ ok: false, data: null });
     });
+
+    it('validates legacy user accounts', async () => {
+      const hashedPassword = generatePasswordHash('foo-password');
+      client.getSecret.resolves({
+        value: hashedPassword,
+        contentType: 'admin account',
+        attributes: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+        },
+      });
+
+      const exists = await service.validateUser('foo', 'foo-password');
+
+      expect(exists).to.eql({
+        ok: true,
+        data: {
+          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          accountType: 'admin account',
+          disabled: false,
+        },
+      });
+    });
   });
 
   describe('.updatePassword', () => {
