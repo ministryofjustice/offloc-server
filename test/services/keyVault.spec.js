@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 const formatDate = require('date-fns/format');
 const startOfToday = require('date-fns/start_of_today');
+const startOfTomorrow = require('date-fns/start_of_tomorrow');
+const startOfYesterday = require('date-fns/start_of_yesterday');
+const addMinutes = require('date-fns/add_minutes');
 
 const createKeyVaultService = require('../../server/services/keyVault');
 const config = require('../../server/config');
@@ -64,12 +67,16 @@ describe('services/keyVault', () => {
 
   describe('.validateUser', () => {
     it('returns true when authentication passes', async () => {
+      const notBefore = startOfYesterday();
+      const expires = startOfTomorrow();
       const hashedPassword = generatePasswordHash('foo-password');
+
       client.getSecret.resolves({
         value: hashedPassword,
         contentType: defaultContentType,
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires,
+          notBefore,
         },
       });
 
@@ -78,9 +85,10 @@ describe('services/keyVault', () => {
       expect(exists).to.eql({
         ok: true,
         data: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires,
           accountType: 'admin account',
           disabled: false,
+          validFrom: notBefore,
         },
       });
     });
@@ -99,7 +107,7 @@ describe('services/keyVault', () => {
         contentType: defaultContentType,
         value: hashedPassword,
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires: startOfTomorrow(),
         },
       });
 
@@ -109,12 +117,16 @@ describe('services/keyVault', () => {
     });
 
     it('validates legacy user accounts', async () => {
+      const notBefore = startOfYesterday();
+      const expires = startOfTomorrow();
       const hashedPassword = generatePasswordHash('foo-password');
+
       client.getSecret.resolves({
         value: hashedPassword,
         contentType: 'admin account',
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires,
+          notBefore,
         },
       });
 
@@ -123,9 +135,10 @@ describe('services/keyVault', () => {
       expect(exists).to.eql({
         ok: true,
         data: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires,
           accountType: 'admin account',
           disabled: false,
+          validFrom: notBefore,
         },
       });
     });
@@ -141,7 +154,7 @@ describe('services/keyVault', () => {
           value: generatePasswordHash('foo-password'),
           contentType: defaultContentType,
           attributes: {
-            expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+            expires: startOfTomorrow(),
           },
         });
         client.setSecret.resolves(true);
@@ -202,7 +215,7 @@ describe('services/keyVault', () => {
         value: hashedPassword,
         contentType: defaultContentType,
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires: startOfTomorrow(),
         },
       });
       client.setSecret.resolves(true);
@@ -318,6 +331,30 @@ describe('services/keyVault', () => {
 
       expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
       expect(client.updateSecret.lastCall.args[3]).to.eql(expectedContentType);
+    });
+  });
+
+  describe('.temporarilyLockUser', () => {
+    it('locks a user for 15 mins', async () => {
+      const clock = sinon.useFakeTimers({
+        now: 1483228800000,
+        shouldAdvanceTime: false,
+      });
+
+      const expectedNotBefore = addMinutes(Date.now(), 15);
+
+      const expectedAttributes = {
+        secretAttributes: {
+          notBefore: expectedNotBefore,
+        },
+      };
+
+      await service.temporarilyLockUser('foo-user');
+
+      expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
+      expect(client.updateSecret.lastCall.args[3]).to.eql(expectedAttributes);
+
+      clock.restore();
     });
   });
 });

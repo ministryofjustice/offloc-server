@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const msRestAzure = require('ms-rest-azure');
 const { KeyVaultClient } = require('azure-keyvault');
 const formatDate = require('date-fns/format');
+const addMinutes = require('date-fns/add_minutes');
 
 const logger = require('../loggers/logger');
 const config = require('../config');
@@ -39,6 +40,7 @@ async function createKeyVaultService(override) {
     getUser,
     disableUser,
     enableUser,
+    temporarilyLockUser,
   };
 
   function createUser({ username, password, accountType }) {
@@ -66,6 +68,7 @@ async function createKeyVaultService(override) {
           expires: attributes.expires,
           accountType: accountData.accountType,
           disabled: accountData.disabled,
+          validFrom: attributes.notBefore,
         };
       }
 
@@ -125,6 +128,14 @@ async function createKeyVaultService(override) {
 
     return client.updateSecret(keyVaultUri, name, '', {
       contentType: JSON.stringify(updatedContentType),
+    });
+  }
+
+  async function temporarilyLockUser(name) {
+    return client.updateSecret(keyVaultUri, name, '', {
+      secretAttributes: {
+        notBefore: addMinutes(Date.now(), 15),
+      },
     });
   }
 
