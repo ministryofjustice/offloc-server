@@ -20,3 +20,15 @@
       </div>
   </div>
 </footer>
+<script>
+  const logoutBtn = document.getElementById('logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      var request = new XMLHttpRequest();
+      request.open("get", "/logout", false, "false", "false");
+      request.send();
+      window.location.replace("/");
+    })
+  }
+</script>

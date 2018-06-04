@@ -15,7 +15,14 @@
           <a class="nav-link" href="/admin">Dashboard</a>
         <% } %>
         <a class="nav-link" href="/change-password">Change password</a>
+        <a id="logout" class="nav-link" href="/logout">Logout</a>
       </div>
+      <% } %>
+
+      <% if (locals.reset) { %>
+        <div class="header-user">
+          <a id="logout" class="nav-link" href="/logout">Reset session</a>
+        </div>
       <% } %>
   </div>
 </header>
