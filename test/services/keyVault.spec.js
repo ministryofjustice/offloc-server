@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 const formatDate = require('date-fns/format');
 const startOfToday = require('date-fns/start_of_today');
+const startOfTomorrow = require('date-fns/start_of_tomorrow');
+const startOfYesterday = require('date-fns/start_of_yesterday');
+const addMinutes = require('date-fns/add_minutes');
 
 const createKeyVaultService = require('../../server/services/keyVault');
 const config = require('../../server/config');
@@ -62,74 +65,31 @@ describe('services/keyVault', () => {
     });
   });
 
-  describe('.validateUser', () => {
-    it('returns true when authentication passes', async () => {
-      const hashedPassword = generatePasswordHash('foo-password');
+  describe('.getUser', () => {
+    it('returns a user for a given user name', async () => {
       client.getSecret.resolves({
-        value: hashedPassword,
+        value: 'some hashed password',
         contentType: defaultContentType,
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          notBefore: startOfYesterday(),
+          expires: startOfTomorrow(),
         },
       });
 
-      const exists = await service.validateUser('foo', 'foo-password');
+      const result = await service.getUser('foo-user');
 
-      expect(exists).to.eql({
-        ok: true,
-        data: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-          accountType: 'admin account',
-          disabled: false,
-        },
-      });
-    });
+      expect(client.getSecret.lastCall.args[1]).to.equal('foo-user');
 
-    it('returns false when there is an error with authentication', async () => {
-      client.getSecret.rejects({ status: 404 });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({ ok: false, data: null });
-    });
-
-    it('returns false when the password is wrong', async () => {
-      const hashedPassword = generatePasswordHash('other-password');
-      client.getSecret.resolves({
-        contentType: defaultContentType,
-        value: hashedPassword,
-        attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-        },
-      });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({ ok: false, data: null });
-    });
-
-    it('validates legacy user accounts', async () => {
-      const hashedPassword = generatePasswordHash('foo-password');
-      client.getSecret.resolves({
-        value: hashedPassword,
-        contentType: 'admin account',
-        attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-        },
-      });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({
-        ok: true,
-        data: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
-          accountType: 'admin account',
-          disabled: false,
-        },
+      expect(result).to.eql({
+        password: 'some hashed password',
+        accountType: constants.ADMIN_ACCOUNT,
+        disabled: false,
+        expires: startOfTomorrow(),
+        validFrom: startOfYesterday(),
       });
     });
   });
+
 
   describe('.updatePassword', () => {
     describe('when valid', () => {
@@ -141,7 +101,7 @@ describe('services/keyVault', () => {
           value: generatePasswordHash('foo-password'),
           contentType: defaultContentType,
           attributes: {
-            expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+            expires: startOfTomorrow(),
           },
         });
         client.setSecret.resolves(true);
@@ -202,7 +162,7 @@ describe('services/keyVault', () => {
         value: hashedPassword,
         contentType: defaultContentType,
         attributes: {
-          expires: 'Mon May 21 2018 13:08:20 GMT+0100 (GMT)',
+          expires: startOfTomorrow(),
         },
       });
       client.setSecret.resolves(true);
@@ -318,6 +278,39 @@ describe('services/keyVault', () => {
 
       expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
       expect(client.updateSecret.lastCall.args[3]).to.eql(expectedContentType);
+    });
+  });
+
+  describe('.temporarilyLockUser', () => {
+    it('locks a user for 15 mins', async () => {
+      const clock = sinon.useFakeTimers({
+        now: 1483228800000,
+        shouldAdvanceTime: false,
+      });
+
+      const expectedNotBefore = addMinutes(Date.now(), 15);
+
+      const expectedAttributes = {
+        secretAttributes: {
+          notBefore: expectedNotBefore,
+        },
+      };
+
+      client.updateSecret.resolves({
+        value: generatePasswordHash('foo-password'),
+        contentType: defaultContentType,
+        attributes: {
+          expires: startOfTomorrow(),
+          notBefore: expectedNotBefore,
+        },
+      });
+
+      await service.temporarilyLockUser('foo-user');
+
+      expect(client.updateSecret.lastCall.args[1]).to.equal('foo-user');
+      expect(client.updateSecret.lastCall.args[3]).to.eql(expectedAttributes);
+
+      clock.restore();
     });
   });
 });

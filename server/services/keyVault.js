@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const msRestAzure = require('ms-rest-azure');
 const { KeyVaultClient } = require('azure-keyvault');
 const formatDate = require('date-fns/format');
+const addMinutes = require('date-fns/add_minutes');
 
 const logger = require('../loggers/logger');
 const config = require('../config');
@@ -32,13 +33,14 @@ async function createKeyVaultService(override) {
 
   return {
     createUser,
-    validateUser,
+    validatePassword,
     updatePassword,
     listUsers,
     deleteUser,
     getUser,
     disableUser,
     enableUser,
+    temporarilyLockUser,
   };
 
   function createUser({ username, password, accountType }) {
@@ -53,25 +55,14 @@ async function createKeyVaultService(override) {
   async function validateUser(username, password) {
     try {
       logger.debug({ user: username }, 'Fetching user from vault');
-      const { value: existingHash, attributes, contentType } = await getUser(username);
+      const user = await getUser(username);
 
       logger.debug({ user: username }, 'Comparing password');
-
-      const authenticated = await bcrypt.compare(password, existingHash);
-      const accountData = getContentType(contentType);
-      let data = null;
-
-      if (authenticated) {
-        data = {
-          expires: attributes.expires,
-          accountType: accountData.accountType,
-          disabled: accountData.disabled,
-        };
-      }
+      const authenticated = await validatePassword(password, user.password);
 
       return {
         ok: authenticated,
-        data,
+        data: user,
       };
     } catch (error) {
       logger.error(error, 'Failed to validate user');
@@ -80,6 +71,10 @@ async function createKeyVaultService(override) {
         data: null,
       };
     }
+  }
+
+  async function validatePassword(password1, password2) {
+    return bcrypt.compare(password1, password2);
   }
 
   async function updatePassword({
@@ -109,8 +104,24 @@ async function createKeyVaultService(override) {
     return { ok: true, errors: [] };
   }
 
-  function getUser(name) {
-    return client.getSecret(keyVaultUri, name, '');
+  async function getUser(name) {
+    const user = await client.getSecret(keyVaultUri, name, '');
+
+    return decorateUser(user);
+  }
+
+
+  function decorateUser(user) {
+    const { value, attributes, contentType } = user;
+    const accountData = getContentType(contentType);
+
+    return {
+      password: value,
+      accountType: accountData.accountType,
+      disabled: accountData.disabled,
+      expires: attributes.expires,
+      validFrom: attributes.notBefore,
+    };
   }
 
   function deleteUser(name) {
@@ -118,14 +129,22 @@ async function createKeyVaultService(override) {
   }
 
   async function updateContentType(name, opts) {
-    const user = await getUser(name);
-
-    const contentType = getContentType(user.contentType);
-    const updatedContentType = { ...contentType, ...opts };
+    const { accountType, disabled } = await getUser(name);
+    const updatedContentType = { accountType, disabled, ...opts };
 
     return client.updateSecret(keyVaultUri, name, '', {
       contentType: JSON.stringify(updatedContentType),
     });
+  }
+
+  async function temporarilyLockUser(name) {
+    const user = await client.updateSecret(keyVaultUri, name, '', {
+      secretAttributes: {
+        notBefore: addMinutes(Date.now(), 15),
+      },
+    });
+
+    return decorateUser(user);
   }
 
   function disableUser(name) {

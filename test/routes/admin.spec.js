@@ -28,10 +28,8 @@ const successService = {
     createUser: sinon.stub().returns(true),
     deleteUser: sinon.stub().returns(true),
     getUser: sinon.stub().returns({
-      contentType: JSON.stringify({
-        accountType: constants.USER_ACCOUNT,
-        disabled: false,
-      }),
+      accountType: constants.USER_ACCOUNT,
+      disabled: false,
     }),
     disableUser: sinon.stub().returns(true),
     enableUser: sinon.stub().returns(true),
