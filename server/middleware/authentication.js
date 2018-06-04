@@ -119,22 +119,30 @@ function unauthorized(res) {
 }
 
 function authenticationProblem(res) {
+  res.locals.reset = true;
   res.status(403);
   res.render('pages/authenticationProblem');
 }
 
 function temporarilyLockedUser(res, { time }) {
+  res.locals.reset = true;
   res.status(403);
   res.render('pages/temporarily-locked-account', { time: formatDate(time, 'MM/DD/YYYY HH:mm:ss') });
 }
 
 function disabled(res) {
+  res.locals.reset = true;
   res.status(403);
   res.render('pages/disabled');
+}
+
+function logout(req, res) {
+  res.sendStatus(401);
 }
 
 
 module.exports = {
   passwordExpiredMiddleWare,
   authenticationMiddleWare,
+  logout,
 };
