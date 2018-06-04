@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <% include ../partials/head %>
+</head>
+<body>
+
+  <% include ../partials/header %>
+
+  <main id="content" class="app-container" role="main">
+    <div class="grid-row">
+      <div class="column-two-thirds">
+        <h1 class="heading-large">Nomis Reports from the last 14 days</h1>
+        <% if (nomisReports.length ) { %>
+          <table class="u-margin-bottom-medium">
+            <tbody>
+              <% nomisReports.forEach(function(report) { %>
+                <tr>
+                  <td><%= report.name %></td>
+                  <td class="numeric"><a class="button button-start" target="_blank" href="/<%= report.name %>" role="button">Download</a></td>
+                </tr>
+              <% }) %>
+
+            </tbody>
+          </table>
+        <% } else { %>
+          <p class="heading-medium">No Nomis Reports found for the last 14 days</p>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <% include ../partials/footer %>
+</body>
+</html>

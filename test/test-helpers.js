@@ -20,8 +20,9 @@ function binaryParser(res, callback) {
   });
 }
 
-function createBlobServiceSuccess(entry) {
+function createBlobServiceSuccess({ entry, entries = [] } = {}) {
   return {
+    listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(null, { entries }),
     doesBlobExist: (containerName, blobName, callback) => callback(null, entry),
     createReadStream: () => fs.createReadStream(path.resolve(__dirname, './resources/20181704.zip')),
   };
@@ -30,6 +31,7 @@ function createBlobServiceSuccess(entry) {
 function createBlobServiceError() {
   return {
     doesBlobExist: (containerName, blobName, callback) => callback('error', null),
+    listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(true, null),
     createReadStream: () => new Readable({
       read() {
         process.nextTick(() => this.emit('error', 'some error'));

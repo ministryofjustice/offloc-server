@@ -11,16 +11,32 @@ const {
   setupBasicApp,
 } = require('../test-helpers');
 
+
+const entry = {
+  name: '20180418.zip',
+  lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
+  exists: true,
+};
+
+const entries = [
+  { name: '20180417.zip' },
+  { name: '20180416.zip' },
+  { name: '20180415.zip' },
+];
+
 describe('GET /', () => {
-  const entry = {
-    name: '20180418.zip',
-    lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
-    exists: true,
-  };
+  let clock;
+  beforeEach(() => {
+    clock = sinon.useFakeTimers({ now: 1524049200000, shouldAdvanceTime: false });
+  });
+
+  afterEach(() => {
+    clock.restore();
+  });
   describe('when there is a file available for download', () => {
     it('respond with a page displaying a file to download', async () => {
       const app = setupBasicApp();
-      const service = await storageService(createBlobServiceSuccess(entry));
+      const service = await storageService(createBlobServiceSuccess({ entry }));
 
       app.use(createIndexRouter({
         storageService: service,
@@ -32,6 +48,27 @@ describe('GET /', () => {
         .expect(200)
         .then((response) => {
           expect(response.text).to.include('<td>20180418.zip</td>');
+        });
+    });
+  });
+
+  describe('when there are files in the last 14 days available', () => {
+    it('display files from the last 14 days', async () => {
+      const app = setupBasicApp();
+      const service = await storageService(createBlobServiceSuccess({ entry, entries }));
+
+      app.use(createIndexRouter({
+        storageService: service,
+      }));
+
+      return request(app)
+        .get('/historic-reports')
+        .expect('Content-Type', /text\/html/)
+        .expect(200)
+        .then((response) => {
+          expect(response.text).to.include('<td>20180417.zip</td>');
+          expect(response.text).to.include('<td>20180416.zip</td>');
+          expect(response.text).to.include('<td>20180415.zip</td>');
         });
     });
   });
