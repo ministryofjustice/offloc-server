@@ -65,84 +65,31 @@ describe('services/keyVault', () => {
     });
   });
 
-  describe('.validateUser', () => {
-    it('returns true when authentication passes', async () => {
-      const notBefore = startOfYesterday();
-      const expires = startOfTomorrow();
-      const hashedPassword = generatePasswordHash('foo-password');
-
+  describe('.getUser', () => {
+    it('returns a user for a given user name', async () => {
       client.getSecret.resolves({
-        value: hashedPassword,
+        value: 'some hashed password',
         contentType: defaultContentType,
         attributes: {
-          expires,
-          notBefore,
-        },
-      });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({
-        ok: true,
-        data: {
-          expires,
-          accountType: 'admin account',
-          disabled: false,
-          validFrom: notBefore,
-        },
-      });
-    });
-
-    it('returns false when there is an error with authentication', async () => {
-      client.getSecret.rejects({ status: 404 });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({ ok: false, data: null });
-    });
-
-    it('returns false when the password is wrong', async () => {
-      const hashedPassword = generatePasswordHash('other-password');
-      client.getSecret.resolves({
-        contentType: defaultContentType,
-        value: hashedPassword,
-        attributes: {
+          notBefore: startOfYesterday(),
           expires: startOfTomorrow(),
         },
       });
 
-      const exists = await service.validateUser('foo', 'foo-password');
+      const result = await service.getUser('foo-user');
 
-      expect(exists).to.eql({ ok: false, data: null });
-    });
+      expect(client.getSecret.lastCall.args[1]).to.equal('foo-user');
 
-    it('validates legacy user accounts', async () => {
-      const notBefore = startOfYesterday();
-      const expires = startOfTomorrow();
-      const hashedPassword = generatePasswordHash('foo-password');
-
-      client.getSecret.resolves({
-        value: hashedPassword,
-        contentType: 'admin account',
-        attributes: {
-          expires,
-          notBefore,
-        },
-      });
-
-      const exists = await service.validateUser('foo', 'foo-password');
-
-      expect(exists).to.eql({
-        ok: true,
-        data: {
-          expires,
-          accountType: 'admin account',
-          disabled: false,
-          validFrom: notBefore,
-        },
+      expect(result).to.eql({
+        password: 'some hashed password',
+        accountType: constants.ADMIN_ACCOUNT,
+        disabled: false,
+        expires: startOfTomorrow(),
+        validFrom: startOfYesterday(),
       });
     });
   });
+
 
   describe('.updatePassword', () => {
     describe('when valid', () => {
@@ -348,6 +295,15 @@ describe('services/keyVault', () => {
           notBefore: expectedNotBefore,
         },
       };
+
+      client.updateSecret.resolves({
+        value: generatePasswordHash('foo-password'),
+        contentType: defaultContentType,
+        attributes: {
+          expires: startOfTomorrow(),
+          notBefore: expectedNotBefore,
+        },
+      });
 
       await service.temporarilyLockUser('foo-user');
 

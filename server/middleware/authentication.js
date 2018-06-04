@@ -18,47 +18,49 @@ function authenticationMiddleWare(service) {
     }
 
     try {
-      const user = await service.validateUser(auth.name, auth.pass);
+      const user = await service.getUser(auth.name);
 
-      if (user.ok) {
-        if (!isExpired(user.data.validFrom)) {
-          return temporarilyLockedUser(res, { time: user.data.validFrom });
-        }
+      if (!isExpired(user.validFrom)) {
+        return temporarilyLockedUser(res, { time: user.validFrom });
+      }
 
-        if (user.data.disabled) {
+      const isAuthenticated = await service.validatePassword(auth.pass, user.password);
+
+      if (isAuthenticated) {
+        if (user.disabled) {
           return disabled(res);
         }
 
-        if (isExpired(user.data.expires)) {
+        if (isExpired(user.expires)) {
           res.locals.passwordExpired = true;
         }
 
-        res.locals.user = { username: auth.name, accountType: user.data.accountType };
+        res.locals.user = { username: auth.name, accountType: user.accountType };
 
         clearFailedLoginAttemptsFor(auth.name);
         return next();
       }
+
+      recordFailedLoginAttemptFor(auth.name);
+
+      if (failedLoginAttempts[auth.name] >= 3) {
+        await handleTooManyFailedAttempts(auth.name, res);
+        return false;
+      }
+
+      return unauthorized(res);
     } catch (expectation) {
       logger.error(expectation);
 
       recordFailedLoginAttemptFor(auth.name);
 
+      if (failedLoginAttempts[auth.name] >= 3) {
+        await handleTooManyFailedAttempts(auth.name, res);
+        return false;
+      }
+
       return unauthorized(res);
     }
-
-    // For users that don't exist
-    recordFailedLoginAttemptFor(auth.name);
-
-    if (failedLoginAttempts[auth.name] === 3) {
-      const lockedUser = await lockAccount(auth.name, service);
-
-      if (lockedUser) {
-        return temporarilyLockedUser(res, { time: lockedUser.attributes.notBefore });
-      }
-      return authenticationProblem(res);
-    }
-
-    return unauthorized(res);
   };
 
   function recordFailedLoginAttemptFor(username) {
@@ -75,8 +77,16 @@ function authenticationMiddleWare(service) {
       failedLoginAttempts[username] = 0;
     }
   }
-}
 
+  async function handleTooManyFailedAttempts(username, res) {
+    const lockedUser = await lockAccount(username, service);
+
+    if (lockedUser) {
+      return temporarilyLockedUser(res, { time: lockedUser.validFrom });
+    }
+    return authenticationProblem(res);
+  }
+}
 
 async function lockAccount(username, service) {
   try {

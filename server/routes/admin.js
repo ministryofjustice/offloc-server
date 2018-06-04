@@ -104,10 +104,9 @@ module.exports = function Index({ keyVaultService }) {
     }
 
     const password = generateRandomPassword();
-    const user = await keyVaultService.getUser(username);
 
     try {
-      const { accountType } = JSON.parse(user.contentType);
+      const { accountType } = await keyVaultService.getUser(username);
 
       await keyVaultService.createUser({
         username,
