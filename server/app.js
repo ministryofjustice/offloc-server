@@ -15,7 +15,11 @@ const logger = require('./loggers/logger.js');
 const config = require('./config');
 const constants = require('./constants/app');
 
-const { authenticationMiddleWare, passwordExpiredMiddleWare } = require('./middleware/authentication');
+const {
+  authenticationMiddleWare,
+  passwordExpiredMiddleWare,
+  logout,
+} = require('./middleware/authentication');
 
 const createIndexRouter = require('./routes/index');
 const createHealthRouter = require('./routes/health');
@@ -135,7 +139,7 @@ module.exports = function createApp({
 
   // Routes
   app.use(authenticationMiddleWare(keyVaultService));
-  app.get('/logout', (req, res) => res.sendStatus(401));
+  app.get('/logout', logout);
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
   app.use('/admin', createAdminRouter({ keyVaultService }));

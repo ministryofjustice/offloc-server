@@ -136,8 +136,13 @@ function disabled(res) {
   res.render('pages/disabled');
 }
 
+function logout(req, res) {
+  res.sendStatus(401);
+}
+
 
 module.exports = {
   passwordExpiredMiddleWare,
   authenticationMiddleWare,
+  logout,
 };

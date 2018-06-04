@@ -8,6 +8,7 @@ const { setupBasicApp } = require('../test-helpers');
 const {
   authenticationMiddleWare,
   passwordExpiredMiddleWare,
+  logout,
 } = require('../../server/middleware/authentication');
 
 const simpleRoute = (req, res) => {
@@ -234,5 +235,16 @@ describe('AuthenticationMiddleware', () => {
         expect(response.text).to.include('This account has been temporarily locked');
         expect(response.text).to.include(prettyValidFrom);
       });
+  });
+
+  describe('Logout', () => {
+    it('returns a 401', async () => {
+      const app = setupBasicApp();
+      app.use('/logout', logout);
+
+      await request(app)
+        .get('/logout')
+        .expect(401);
+    });
   });
 });
