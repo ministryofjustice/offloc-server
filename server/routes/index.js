@@ -15,6 +15,17 @@ module.exports = function Index({ storageService }) {
     }
   });
 
+  router.get('/historic-reports', async (req, res) => {
+    try {
+      const nomisReports = await storageService.listFiles();
+
+      res.render('pages/historicNomisFiles', { nomisReports });
+    } catch (exception) {
+      logger.error(exception);
+      res.render('pages/historicNomisFiles', { nomisReports: [] });
+    }
+  });
+
 
   router.get('/:fileName.zip', async (req, res, next) => {
     try {

@@ -2,6 +2,11 @@ const msRestAzure = require('ms-rest-azure');
 const azureStorage = require('azure-storage');
 const StorageManagementClient = require('azure-arm-storage');
 
+const subDays = require('date-fns/sub_days');
+const subMonths = require('date-fns/sub_months');
+const format = require('date-fns/format');
+const getDate = require('date-fns/get_date');
+
 const config = require('../config');
 const logger = require('../loggers/logger');
 const azureLocal = require('./azure-local');
@@ -61,37 +66,70 @@ async function createBlobServiceClient(blobServiceClient) {
   return {
     downloadFile: downloadFile(service),
     todaysFile: todaysFile(service),
+    listFiles: listFiles(service),
   };
 }
 
-// eslint-disable-next-line no-unused-vars
 function listFiles(service) {
+  return async () => {
+    const date = new Date();
+    const dateToday = getDate(date);
+    const prefix = format(date, 'YYYYMM');
+
+    if (dateToday < 15) {
+      const lastMonth = subMonths(date, 1);
+      const lastMonthPrefix = format(lastMonth, 'YYYYMM');
+
+      const [lastMonthBlobs, thisMonthsBlobs] = await Promise.all([
+        getBlobsByPrefix(service, lastMonthPrefix),
+        getBlobsByPrefix(service, prefix),
+      ]);
+
+      return getFilesWithinLast14DaysIn([...lastMonthBlobs, ...thisMonthsBlobs]);
+    }
+
+    const blobs = await getBlobsByPrefix(service, prefix);
+
+    return getFilesWithinLast14DaysIn(blobs);
+  };
+}
+
+function getBlobsByPrefix(service, prefix) {
   return new Promise((resolve, reject) => {
-    service.listBlobsSegmented(config.azureBlobStorageContainerName, null, (error, data) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(data);
-      }
-    });
+    service.listBlobsSegmentedWithPrefix(
+      config.azureBlobStorageContainerName,
+      prefix,
+      null,
+      (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(data.entries);
+        }
+      },
+    );
   });
 }
 
+function getFilesNamesInTheLast(daysLeft, date = new Date(), dates = []) {
+  if (daysLeft === 0) return dates;
+
+  const previousDay = subDays(date, 1);
+  const fileName = format(previousDay, 'YYYYMMDD.zip');
+
+  return getFilesNamesInTheLast(daysLeft - 1, previousDay, [...dates, fileName]);
+}
+
+function getFilesWithinLast14DaysIn(fileList) {
+  const filesInTheLast14Days = getFilesNamesInTheLast(14);
+
+  return filesInTheLast14Days
+    .filter(fileName => !!fileList.find(file => file.name === fileName))
+    .map(name => ({ name }));
+}
+
 function todaysFileName() {
-  const date = new Date();
-  const year = date.getFullYear();
-  let month = date.getMonth() + 1;
-  let day = date.getDate();
-
-  if (day < 10) {
-    day = `0${day}`;
-  }
-
-  if (month < 10) {
-    month = `0${month}`;
-  }
-
-  return `${year}${month}${day}.zip`;
+  return format(new Date(), 'YYYYMMDD.zip');
 }
 
 
