@@ -9,7 +9,7 @@
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
       var request = new XMLHttpRequest();
-      request.open("get", "/logout", false, "false", "false");
+      request.open("get", "/logout", false);
       request.send();
       window.location.replace("/");
     })

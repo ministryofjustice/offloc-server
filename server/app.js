@@ -138,8 +138,8 @@ module.exports = function createApp({
   }));
 
   // Routes
-  app.use(authenticationMiddleWare(keyVaultService));
   app.get('/logout', logout);
+  app.use(authenticationMiddleWare(keyVaultService));
   app.use('/change-password', createChangePasswordRouter({ keyVaultService, passwordValidationService }));
   app.use(passwordExpiredMiddleWare);
   app.use('/admin', createAdminRouter({ keyVaultService }));
