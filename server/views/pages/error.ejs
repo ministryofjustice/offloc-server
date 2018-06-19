@@ -12,8 +12,14 @@
       <div class="grid-row">
         <div class="column-two-thirds">
           <h1 class="heading-large"><%= message %></h1>
-          <h2 class="heading-medium"><%= error.status %></h2>
-          <pre><%= error.stack %></pre>
+          <p class="lede">
+            The error has been logged, please try again.
+          </p>
+          <p class="body-text">
+            If the error persists, contact support quoting
+            <kbd><%= req_id %></kbd>
+          </p>
+          <pre><%= stack %></pre>
         </div>
       </div>
     </main>

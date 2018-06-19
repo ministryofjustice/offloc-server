@@ -153,7 +153,7 @@ describe('/change-password', () => {
             newPassword: securePassword,
             confirmPassword: securePassword,
           })
-          .expect(401)
+          .expect(400)
           .then((response) => {
             expect(response.text).to.include('class="error-summary"');
           });
