@@ -9,9 +9,12 @@
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
       var request = new XMLHttpRequest();
-      request.open("get", "/logout", false);
+      var wrongUsername = "" + Math.random();
+      request.open("get", "/logout", true, wrongUsername);
+      request.onload = function() {
+        window.location.replace("/");
+      }
       request.send();
-      window.location.replace("/");
     })
   }
 </script>

@@ -137,7 +137,7 @@ function disabled(res) {
 }
 
 function logout(req, res) {
-  res.sendStatus(401);
+  unauthorized(res);
 }
 
 
