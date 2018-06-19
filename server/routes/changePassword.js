@@ -38,7 +38,7 @@ module.exports = function ChangePassword({ keyVaultService, passwordValidationSe
 
       if (!result.ok) {
         logger.info({ user: user.username }, 'Invalid credentials');
-        res.status(401);
+        res.status(400);
         return res.render('pages/changePassword', {
           csrfToken: req.csrfToken(),
           errors: {
