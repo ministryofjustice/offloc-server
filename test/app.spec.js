@@ -8,7 +8,9 @@ const createApp = require('../server/app');
 
 describe('app', () => {
   // TODO: stub less? maybe use nock?
-  const storageService = {};
+  const storageService = {
+    todaysFile: sinon.stub().resolves({ name: '20180619.zip' }),
+  };
   const appInfo = {
     getBuildInfo: sinon.stub(),
   };
@@ -73,5 +75,16 @@ describe('app', () => {
         expect(res.text).to.contain('invalid csrf token');
       }));
 
-  it('hides the stack trace on error pages');
+  it('hides the stack trace on error pages', () => {
+    const err = new Error('Whoops');
+    storageService.todaysFile.rejects(err);
+    return req
+      .get('/')
+      .auth('user', 'thecorrectpassword')
+      .expect(500)
+      .expect((res) => {
+        expect(res.text).to.not.contain('Whoops');
+        expect(res.text).to.not.contain('at Context.it');
+      });
+  });
 });

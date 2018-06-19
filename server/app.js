@@ -159,14 +159,21 @@ module.exports = function createApp({
 
 // eslint-disable-next-line no-unused-vars
 function renderErrors(error, req, res, next) {
-  logger.error(error);
-
-  res.locals.error = error;
-  res.locals.stack = !config.dev ? null : error.stack;
-  res.locals.message = !config.dev ?
-    'Something went wrong. The error has been logged. Please try again' : error.message;
+  logger.error(error, 'Unhandled error');
 
   res.status(error.status || 500);
 
-  res.render('pages/error');
+  const locals = {
+    message: 'Something went wrong.',
+    req_id: req.id,
+    stack: '',
+  };
+  if (error.expose || config.dev) {
+    locals.message = error.message;
+  }
+  if (config.dev) {
+    locals.stack = error.stack;
+  }
+
+  res.render('pages/error', locals);
 }
