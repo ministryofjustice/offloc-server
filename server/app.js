@@ -77,7 +77,6 @@ module.exports = function createApp({
     });
   }
 
-
   // GovUK Template Configuration
   app.locals.asset_path = '/public/';
 
@@ -130,7 +129,9 @@ module.exports = function createApp({
   app.use(cookieParser());
 
   // CSRF protection
-  app.use(csurf({ cookie: true }));
+  const cookieSettings = { httpOnly: true };
+  if (!config.dev) cookieSettings.secure = true;
+  app.use(csurf({ cookie: cookieSettings }));
 
   app.use(bunyanMiddleware({
     logger,
