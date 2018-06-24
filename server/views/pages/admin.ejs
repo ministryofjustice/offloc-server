@@ -70,7 +70,7 @@
                 <th scope="col">Username</th>
                 <th scope="col">Type</th>
                 <th scope="col">Password expiry</th>
-                <th class="numeric" scope="col">Actions</th>
+                <th class="numeric" scope="col" width="50%">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -79,7 +79,7 @@
                   <td><%= account.username %></td>
                   <td><%= account.accountType %></td>
                   <td><%= account.expiresPretty %></td>
-                  <td class="numeric">
+                  <td class="numeric" width="50%">
                     <% if(locals.user.username !== account.username) {%>
                       <% if (account.disabled) {%>
                         <form class="u-display-ib u-margin-right-medium" method="POST" action="/admin/enable-user" onsubmit="return confirm('You are about the re-enable the following account: <%= account.username%> \n Do you want to procced?');">
