@@ -19,7 +19,7 @@ const log = bunyan.createLogger({ name: 'Offloc Import', stream: formatOut, leve
 const args = process.argv.slice(2);
 const [filePath] = args;
 
-const REQUEST_TIMEOUT = 5000;
+const REQUEST_TIMEOUT = 60000;
 
 if (!filePath || !filePath.trim()) {
   log.error('Insufficient arguments given: A JSON file path should be passed as the first argument!');
