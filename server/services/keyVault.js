@@ -175,7 +175,7 @@ async function createKeyVaultService(override) {
   }
 
   async function listUsers() {
-    const secrets = await client.getSecrets(keyVaultUri);
+    const secrets = await getAllSecrets();
     const accounts = ({ contentType }) => {
       const { accountType } = getContentType(contentType);
       return accountType === constants.USER_ACCOUNT || accountType === constants.ADMIN_ACCOUNT;
@@ -196,6 +196,19 @@ async function createKeyVaultService(override) {
           expiresPretty: formatDate(account.attributes.expires, 'DD/MM/YYYY'),
         };
       });
+  }
+
+  async function getAllSecrets() {
+    const result = await client.getSecrets(keyVaultUri);
+
+    while (result.nextLink) {
+      // eslint-disable-next-line no-await-in-loop
+      const more = await client.getSecretsNext(result.nextLink);
+      [].push.apply(result, more);
+      result.nextLink = more.nextLink;
+    }
+
+    return result;
   }
 }
 

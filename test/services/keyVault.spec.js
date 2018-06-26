@@ -19,6 +19,10 @@ const defaultContentType = JSON.stringify({
   accountType: constants.ADMIN_ACCOUNT,
   disabled: false,
 });
+const userContentType = JSON.stringify({
+  accountType: constants.USER_ACCOUNT,
+  disabled: false,
+});
 
 describe('services/keyVault', () => {
   let client;
@@ -29,6 +33,7 @@ describe('services/keyVault', () => {
       getSecret: sinon.stub(),
       setSecret: sinon.stub(),
       getSecrets: sinon.stub(),
+      getSecretsNext: sinon.stub(),
       deleteSecret: sinon.stub(),
       updateSecret: sinon.stub(),
     };
@@ -218,6 +223,62 @@ describe('services/keyVault', () => {
           expires: startOfToday(),
           expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
           disabled: true,
+        },
+      ]);
+    });
+
+    it('returns a list of users if it needs multiple api calls', async () => {
+      const page1 = [
+        {
+          id: 'http://vault.com/secrets/foo-user',
+          contentType: defaultContentType,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+        {
+          id: 'http://vault.com/secrets/bar-user',
+          contentType: userContentType,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+      ];
+      page1.nextLink = 'next.page.url';
+
+      client.getSecrets.resolves(page1);
+      client.getSecretsNext.withArgs('next.page.url').resolves([
+        {
+          id: 'http://vault.com/secrets/baz-user',
+          contentType: userContentType,
+          attributes: {
+            expires: startOfToday(),
+          },
+        },
+      ]);
+
+      const result = await service.listUsers();
+      expect(result).eql([
+        {
+          accountType: constants.ADMIN_ACCOUNT,
+          username: 'foo-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+          disabled: false,
+        },
+        {
+          accountType: constants.USER_ACCOUNT,
+          username: 'bar-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+          disabled: false,
+        },
+        {
+          accountType: constants.USER_ACCOUNT,
+          username: 'baz-user',
+          expires: startOfToday(),
+          expiresPretty: formatDate(startOfToday(), 'DD/MM/YYYY'),
+          disabled: false,
         },
       ]);
     });
