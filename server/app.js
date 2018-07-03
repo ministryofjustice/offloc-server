@@ -136,6 +136,9 @@ module.exports = function createApp({
   app.use(bunyanMiddleware({
     logger,
     excludeHeaders: ['authorization'],
+    additionalRequestFinishData: (req, res) => ({
+      user: res.locals.user && res.locals.user.username,
+    }),
   }));
 
   // Routes
