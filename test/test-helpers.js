@@ -53,6 +53,9 @@ function setupBasicApp({ admin } = { admin: false }) {
   app.use(csurf({ cookie: true }));
 
   app.use((req, res, next) => {
+    req.log = {
+      info: () => {},
+    };
     res.locals.user = {
       username: 'foo',
       accountType: admin ? constants.ADMIN_ACCOUNT : constants.USER_ACCOUNT,

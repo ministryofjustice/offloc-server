@@ -12,8 +12,13 @@ function authenticationMiddleWare(service) {
   return async function requireAuthentication(req, res, next) {
     const auth = basicAuth(req);
 
+    if (auth && auth.name) {
+      req.user = auth.name;
+    }
+
     if (!auth || !auth.name || !auth.pass) {
       req.log.info('No auth details included');
+      res.reason = 'missing-credentials';
       return unauthorized(res);
     }
 
@@ -48,6 +53,7 @@ function authenticationMiddleWare(service) {
         return false;
       }
 
+      res.reason = 'invalid-password';
       return unauthorized(res);
     } catch (expectation) {
       logger.error(expectation);
@@ -59,6 +65,7 @@ function authenticationMiddleWare(service) {
         return false;
       }
 
+      res.reason = 'unknown-username';
       return unauthorized(res);
     }
   };
@@ -100,6 +107,7 @@ async function lockAccount(username, service) {
 
 function passwordExpiredMiddleWare(req, res, next) {
   if (res.locals.passwordExpired) {
+    req.log.info('Password expired');
     res.render('pages/changePassword', {
       csrfToken: req.csrfToken(),
       errors: {
@@ -120,23 +128,27 @@ function unauthorized(res) {
 
 function authenticationProblem(res) {
   res.locals.reset = true;
+  res.reason = 'error-locking-user';
   res.status(403);
   res.render('pages/authenticationProblem');
 }
 
 function temporarilyLockedUser(res, { time }) {
   res.locals.reset = true;
+  res.reason = 'temporarily-locked';
   res.status(403);
   res.render('pages/temporarily-locked-account', { time: formatDate(time, 'MM/DD/YYYY HH:mm:ss') });
 }
 
 function disabled(res) {
   res.locals.reset = true;
+  res.reason = 'user-disabled';
   res.status(403);
   res.render('pages/disabled');
 }
 
 function logout(req, res) {
+  res.reason = 'logout';
   unauthorized(res);
 }
 

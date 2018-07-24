@@ -5,10 +5,10 @@ appInsights.setup(config.appInsightsKey).start();
 
 appInsights.defaultClient.addTelemetryProcessor(attachUserId);
 function attachUserId(envelope, context) {
-  const res = context['http.ServerResponse'];
-  if (res && res.locals && res.locals.user) {
+  const req = context['http.ServerRequest'];
+  if (req && req.user) {
     // eslint-disable-next-line no-param-reassign
-    envelope.tags['ai.user.authUserId'] = res.locals.user.username;
+    envelope.tags['ai.user.authUserId'] = req.user;
   }
 }
 
