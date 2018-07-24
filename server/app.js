@@ -135,9 +135,10 @@ module.exports = function createApp({
 
   app.use(bunyanMiddleware({
     logger,
-    excludeHeaders: ['authorization'],
+    excludeHeaders: ['cookie', 'set-cookie', 'authorization'],
     additionalRequestFinishData: (req, res) => ({
-      user: res.locals.user && res.locals.user.username,
+      user: req.user || (res.locals.user && res.locals.user.username),
+      reason: res.reason,
     }),
   }));
 
