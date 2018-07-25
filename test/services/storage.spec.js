@@ -9,6 +9,7 @@ describe('storageService', () => {
       const entry = {
         name: 'foo.zip',
         lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
+        contentLength: 390,
         exists: true,
       };
 
@@ -38,7 +39,13 @@ describe('storageService', () => {
   describe('.downloadFile', () => {
     describe('When the requested file is available for download', () => {
       it('returns readable stream', async () => {
-        const service = await storageService(createBlobServiceSuccess());
+        const entry = {
+          name: '20181704.zip',
+          lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
+          contentLength: 390,
+          exists: true,
+        };
+        const service = await storageService(createBlobServiceSuccess({ entry }));
 
         const stream = await service.downloadFile('foo.zip');
 

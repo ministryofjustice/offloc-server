@@ -15,6 +15,7 @@ const {
 const entry = {
   name: '20180418.zip',
   lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',
+  contentLength: 390,
   exists: true,
 };
 
@@ -95,7 +96,7 @@ describe('GET /', () => {
   describe('Successful download request', () => {
     it('downloads the latest file available', async () => {
       const app = setupBasicApp();
-      const service = await storageService(createBlobServiceSuccess());
+      const service = await storageService(createBlobServiceSuccess({ entry }));
 
       app.use(createIndexRouter({
         storageService: service,

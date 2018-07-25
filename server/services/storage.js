@@ -155,12 +155,30 @@ function todaysFile(service) {
 
 function downloadFile(service) {
   return async (blobName) => {
-    const downloadOptions = { useTransactionalMD5: true, parallelOperationThreadCount: 5 };
-
     logger.debug({ file: blobName }, 'Downloading file');
 
-    return service
-      .createReadStream(config.azureBlobStorageContainerName, blobName, downloadOptions);
+    // Fetch properties so we can set a content-length response header
+    // this allows the proxy server to know whether it can buffer the response
+    const properties = await new Promise((resolve, reject) => {
+      service.getBlobProperties(
+        config.azureBlobStorageContainerName,
+        blobName,
+        (err, props) => {
+          if (err) return reject(err);
+          return resolve(props);
+        },
+      );
+    });
+
+    const stream = service.createReadStream(
+      config.azureBlobStorageContainerName,
+      blobName,
+      { disableContentMD5Validation: true },
+    );
+
+    stream.contentLength = properties.contentLength;
+
+    return stream;
   };
 }
 

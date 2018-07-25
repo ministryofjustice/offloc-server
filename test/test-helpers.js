@@ -24,6 +24,7 @@ function createBlobServiceSuccess({ entry, entries = [] } = {}) {
   return {
     listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(null, { entries }),
     doesBlobExist: (containerName, blobName, callback) => callback(null, entry),
+    getBlobProperties: (containerName, blobName, callback) => callback(null, entry),
     createReadStream: () => fs.createReadStream(path.resolve(__dirname, './resources/20181704.zip')),
   };
 }
@@ -32,6 +33,7 @@ function createBlobServiceError() {
   return {
     doesBlobExist: (containerName, blobName, callback) => callback('error', null),
     listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(true, null),
+    getBlobProperties: (containerName, blobName, callback) => callback(null, {}),
     createReadStream: () => new Readable({
       read() {
         process.nextTick(() => this.emit('error', 'some error'));

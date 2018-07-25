@@ -40,6 +40,7 @@ module.exports = function Index({ storageService }) {
 
       stream
         .once('data', () => {
+          res.set('content-length', stream.contentLength);
           res.type('application/x-zip-compressed');
         });
 
