@@ -52,6 +52,20 @@ describe('storageService', () => {
         expect(stream).to.be.an.instanceof(Readable);
       });
     });
+    describe('When the requested file is not available for download', () => {
+      it('returns null', async () => {
+        const notFoundError = new Error('NotFound');
+        notFoundError.code = 'NotFound';
+        const blobService = {
+          getBlobProperties: sinon.stub().yields(notFoundError),
+        };
+        const service = await storageService(blobService);
+
+        const stream = await service.downloadFile('foo.zip');
+
+        expect(stream).to.eql(null);
+      });
+    });
   });
 
   describe('.listFiles', () => {

@@ -120,7 +120,12 @@ describe('GET /', () => {
   describe('Unsuccessful download request', () => {
     it('returns a 404 when an error occurs with the download', async () => {
       const app = setupBasicApp();
-      const service = await storageService(createBlobServiceError());
+      const notFoundError = new Error('NotFound');
+      notFoundError.code = 'NotFound';
+      const blobService = {
+        getBlobProperties: sinon.stub().yields(notFoundError),
+      };
+      const service = await storageService(blobService);
 
       app.use(createIndexRouter({
         storageService: service,
