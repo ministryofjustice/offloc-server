@@ -31,6 +31,12 @@ module.exports = function Index({ storageService }) {
       const fileName = `${req.params.fileName}.zip`;
       const stream = await storageService.downloadFile(fileName);
 
+      if (stream == null) {
+        res.status(404);
+        res.render('pages/404');
+        return;
+      }
+
       stream
         .on('error', (error) => {
           logger.error(error);

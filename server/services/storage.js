@@ -164,11 +164,17 @@ function downloadFile(service) {
         config.azureBlobStorageContainerName,
         blobName,
         (err, props) => {
+          if (err && err.code === 'NotFound') return resolve(null);
           if (err) return reject(err);
           return resolve(props);
         },
       );
     });
+
+    // Resolved from NotFound
+    if (!properties) {
+      return null;
+    }
 
     const stream = service.createReadStream(
       config.azureBlobStorageContainerName,
