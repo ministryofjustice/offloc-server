@@ -1,3 +1,4 @@
+const sinon = require('sinon');
 const request = require('supertest');
 
 const startOfTomorrow = require('date-fns/start_of_tomorrow');
