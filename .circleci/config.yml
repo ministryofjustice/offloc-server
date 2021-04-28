@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: cimg/node:14.16.1-browsers
     working_directory: /home/circleci/app
     branches:
       ignore:
