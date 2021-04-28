@@ -1,6 +1,7 @@
 const express = require('express');
 const addRequestId = require('express-request-id')();
 const helmet = require('helmet');
+const noCache = require('nocache');
 const hsts = require('hsts');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
@@ -84,7 +85,7 @@ module.exports = function createApp({
   app.locals.constants = constants;
 
   // Don't cache dynamic resources
-  app.use(helmet.noCache());
+  app.use(noCache());
 
   app.use('/health', createHealthRouter({ appInfo }));
 
