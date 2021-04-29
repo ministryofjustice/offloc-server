@@ -6,7 +6,7 @@ A simple server for downloading the latest NOMIS extract.
 
 
 # Getting started
-Install dependencies using `npm ci` ensure you are using >= `Node v14.16.1`
+Install dependencies using `npm ci` ensure you are using >= `Node v14.15.1`
 
 Ensure you have a `.env` file containing all default env variables
 
