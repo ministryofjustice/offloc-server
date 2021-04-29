@@ -38,7 +38,7 @@ jobs:
       - deploy:
           name: Build Derived Git Commit
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
 
               BUILD_NUMBER=$CIRCLE_BUILD_NUM \
               GIT_REF=$CIRCLE_SHA1 \
@@ -57,7 +57,7 @@ jobs:
       - deploy:
           name: Deploy to Stage Environment
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
 
               git push --force origin HEAD:deploy-to-stage
 
