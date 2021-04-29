@@ -1,18 +1,19 @@
-version: 2
+version: 2.0
 
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: cimg/node:14.16.1-browsers
     working_directory: /home/circleci/app
-    branches:
-      ignore:
-        - /deploy-to.*/
+    filters:
+      branches:
+        ignore:
+          - /deploy-to.*/
     steps:
       - checkout
       - run:
           name: Update npm
-          command: 'sudo npm install -g npm@latest'
+          command: 'sudo npm install -g npm@6.14.12'
       - restore_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
@@ -37,7 +38,7 @@ jobs:
       - deploy:
           name: Build Derived Git Commit
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
 
               BUILD_NUMBER=$CIRCLE_BUILD_NUM \
               GIT_REF=$CIRCLE_SHA1 \
@@ -56,7 +57,7 @@ jobs:
       - deploy:
           name: Deploy to Stage Environment
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
 
               git push --force origin HEAD:deploy-to-stage
 
