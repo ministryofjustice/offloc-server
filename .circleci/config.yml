@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: cimg/node:14.16.1-browsers
+      - image: cimg/node:14.15.1-browsers
     working_directory: /home/circleci/app
     filters:
       branches:
@@ -13,7 +13,7 @@ jobs:
       - checkout
       - run:
           name: Update npm
-          command: 'sudo npm install -g npm@6.14.12'
+          command: 'sudo npm install -g npm@6.14.8'
       - restore_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
