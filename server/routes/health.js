@@ -1,6 +1,5 @@
 const express = require('express');
 
-
 module.exports = function Health({ appInfo }) {
   const router = express.Router();
 

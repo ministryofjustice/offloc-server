@@ -5,7 +5,6 @@ const errorMessages = {
   credentialsInvalid: 'The current password is required',
 };
 
-
 function validateInput({ currentPassword, newPassword, confirmPassword }) {
   const errors = [];
 
@@ -31,7 +30,6 @@ function validateInput({ currentPassword, newPassword, confirmPassword }) {
 
   return { errors: [], ok: true, data: { newPassword, currentPassword } };
 }
-
 
 module.exports = {
   validateInput,

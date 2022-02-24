@@ -1,10 +1,8 @@
-
 const basicAuth = require('basic-auth');
 const formatDate = require('date-fns/format');
 
-const logger = require('../loggers/logger.js');
+const logger = require('../loggers/logger');
 const { isExpired } = require('../../utils/index');
-
 
 function authenticationMiddleWare(service) {
   const failedLoginAttempts = {};
@@ -151,7 +149,6 @@ function logout(req, res) {
   res.reason = 'logout';
   unauthorized(res);
 }
-
 
 module.exports = {
   passwordExpiredMiddleWare,

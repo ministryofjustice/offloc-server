@@ -11,7 +11,6 @@ const {
   setupBasicApp,
 } = require('../test-helpers');
 
-
 const entry = {
   name: '20180418.zip',
   lastModified: 'Tue, 24 Apr 2018 17:39:38 GMT',

@@ -40,7 +40,6 @@ module.exports = function Index({ keyVaultService }) {
     }
   });
 
-
   router.get('/add-user', (req, res) => {
     res.render('pages/addUser', {
       error: false,
@@ -93,7 +92,6 @@ module.exports = function Index({ keyVaultService }) {
       next(error);
     }
   });
-
 
   router.post('/reset-password', async (req, res, next) => {
     const { username } = req.body;
@@ -154,14 +152,13 @@ module.exports = function Index({ keyVaultService }) {
     }
   });
 
-
   return router;
 };
 
 function countOccurrencesOf(key, value, data) {
-  return data.filter(el => el[key] === value).length;
+  return data.filter((el) => el[key] === value).length;
 }
 
 function countExpired(data) {
-  return data.filter(el => isExpired(el.expires)).length;
+  return data.filter((el) => isExpired(el.expires)).length;
 }

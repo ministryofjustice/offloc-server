@@ -11,7 +11,7 @@ const sassMiddleware = require('node-sass-middleware');
 const path = require('path');
 const bunyanMiddleware = require('bunyan-middleware');
 
-const logger = require('./loggers/logger.js');
+const logger = require('./loggers/logger');
 
 const config = require('./config');
 const constants = require('./constants/app');

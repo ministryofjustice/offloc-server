@@ -1,6 +1,7 @@
 {
   "extends": "airbnb-base",
   "rules": {
-    "no-use-before-define": ["error", "nofunc"]
+    "no-use-before-define": ["error", "nofunc"],
+    "no-promise-executor-return": 0
   }
 }

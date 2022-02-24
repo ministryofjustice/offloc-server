@@ -13,7 +13,7 @@ describe('app-info service', () => {
     const projectRoot = path.resolve(__dirname, '../../');
     const buildInfoPath = path.resolve(projectRoot, 'build-info.json');
 
-    before(done => exec(
+    before((done) => exec(
       './bin/record-build-info',
       {
         cwd: projectRoot,

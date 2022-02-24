@@ -9,7 +9,6 @@ const createKeyVaultService = require('../../server/services/keyVault');
 const config = require('../../server/config');
 const constants = require('../../server/constants/app');
 
-
 function generatePasswordHash(password) {
   // Fixed salt with low number of rounds so things go faster
   return bcrypt.hashSync(password, '$2b$04$Hh1KRFVlAxhbFCganFbgnu');
@@ -94,7 +93,6 @@ describe('services/keyVault', () => {
       });
     });
   });
-
 
   describe('.updatePassword', () => {
     describe('when valid', () => {
