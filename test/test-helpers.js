@@ -77,7 +77,6 @@ function retrieveCsurfData(response) {
   return { cookies, token };
 }
 
-
 module.exports = {
   setupBasicApp,
   binaryParser,

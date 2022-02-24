@@ -77,7 +77,6 @@ function executeAzureCmd(cmd, callback) {
   );
 }
 
-
 module.exports = {
   createVaultCredentials,
   createBlobStorageCredentials,

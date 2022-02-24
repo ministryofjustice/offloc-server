@@ -110,7 +110,6 @@ async function createKeyVaultService(override) {
     return decorateUser(user);
   }
 
-
   function decorateUser(user) {
     const { value, attributes, contentType } = user;
     const accountData = getContentType(contentType);
@@ -180,7 +179,7 @@ async function createKeyVaultService(override) {
       const { accountType } = getContentType(contentType);
       return accountType === constants.USER_ACCOUNT || accountType === constants.ADMIN_ACCOUNT;
     };
-    const getUserName = str => str.match(/\/([\w-_]+)$/);
+    const getUserName = (str) => str.match(/\/([\w-_]+)$/);
 
     return secrets
       .filter(accounts)

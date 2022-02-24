@@ -1,4 +1,6 @@
 const request = require('supertest');
+const sinon = require('sinon');
+const { expect } = require('chai');
 
 const startOfTomorrow = require('date-fns/start_of_tomorrow');
 const startOfYesterday = require('date-fns/start_of_yesterday');
@@ -36,44 +38,39 @@ describe('app', () => {
 
   const req = request(app);
 
-  it('returns 401 with no auth', () =>
-    req
-      .get('/')
-      .expect(401));
+  it('returns 401 with no auth', () => req
+    .get('/')
+    .expect(401));
 
-  it('lets you in with auth', () =>
-    req
-      .get('/')
-      .auth('user', 'thecorrectpassword')
-      .expect(200));
+  it('lets you in with auth', () => req
+    .get('/')
+    .auth('user', 'thecorrectpassword')
+    .expect(200));
 
-  it('allows access to /health with no auth', () =>
-    req
-      .get('/health')
-      .expect(200));
+  it('allows access to /health with no auth', () => req
+    .get('/health')
+    .expect(200));
 
-  it('sets secure CSRF stuff', () =>
-    req
-      .get('/change-password')
-      .set('X-Forwarded-Proto', 'https')
-      .auth('user', 'thecorrectpassword')
-      .expect(200)
-      .expect((res) => {
-        const csrfCookie = res.headers['set-cookie'][0];
-        expect(csrfCookie)
-          .to.contain('_csrf')
-          .and.to.contain('Secure')
-          .and.to.contain('HttpOnly');
-      }));
+  it('sets secure CSRF stuff', () => req
+    .get('/change-password')
+    .set('X-Forwarded-Proto', 'https')
+    .auth('user', 'thecorrectpassword')
+    .expect(200)
+    .expect((res) => {
+      const csrfCookie = res.headers['set-cookie'][0];
+      expect(csrfCookie)
+        .to.contain('_csrf')
+        .and.to.contain('Secure')
+        .and.to.contain('HttpOnly');
+    }));
 
-  it('denies POST requests without CSRF stuff', () =>
-    req
-      .post('/change-password')
-      .auth('user', 'thecorrectpassword')
-      .expect(403)
-      .expect((res) => {
-        expect(res.text).to.contain('invalid csrf token');
-      }));
+  it('denies POST requests without CSRF stuff', () => req
+    .post('/change-password')
+    .auth('user', 'thecorrectpassword')
+    .expect(403)
+    .expect((res) => {
+      expect(res.text).to.contain('invalid csrf token');
+    }));
 
   it('hides the stack trace on error pages', () => {
     const err = new Error('Whoops');

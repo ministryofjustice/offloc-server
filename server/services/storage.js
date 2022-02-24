@@ -11,7 +11,6 @@ const config = require('../config');
 const logger = require('../loggers/logger');
 const azureLocal = require('./azure-local');
 
-
 function addHoursToTime(date, hours) {
   date.setTime(date.getTime() + (hours * 60 * 60 * 1000));
 
@@ -40,20 +39,19 @@ async function createBlobServiceClient(blobServiceClient) {
     const credentials = await getStorageCredentials();
     const client = new StorageManagementClient(credentials, subscriptionId);
 
-    const { keys } =
-      await client
-        .storageAccounts
-        .listKeys(
-          resourceGroup,
-          accountName,
-          {
-            canonicalizedResource: `/blob/${accountName}/${containerName}`,
-            resource: 'b',
-            permissions,
-            sharedAccessStartTime: startDate,
-            sharedAccessExpiryTime: endDate,
-          },
-        );
+    const { keys } = await client
+      .storageAccounts
+      .listKeys(
+        resourceGroup,
+        accountName,
+        {
+          canonicalizedResource: `/blob/${accountName}/${containerName}`,
+          resource: 'b',
+          permissions,
+          sharedAccessStartTime: startDate,
+          sharedAccessExpiryTime: endDate,
+        },
+      );
 
     const key = keys[0].value;
     const connectionString = `DefaultEndpointsProtocol=https;AccountName=${accountName};AccountKey=${key};EndpointSuffix=core.windows.net`;
@@ -124,14 +122,13 @@ function getFilesWithinLast14DaysIn(fileList) {
   const filesInTheLast14Days = getFilesNamesInTheLast(14);
 
   return filesInTheLast14Days
-    .filter(fileName => !!fileList.find(file => file.name === fileName))
-    .map(name => ({ name }));
+    .filter((fileName) => !!fileList.find((file) => file.name === fileName))
+    .map((name) => ({ name }));
 }
 
 function todaysFileName() {
   return format(new Date(), 'YYYYMMDD.zip');
 }
-
 
 function todaysFile(service) {
   return () => new Promise((resolve) => {
@@ -187,6 +184,5 @@ function downloadFile(service) {
     return stream;
   };
 }
-
 
 module.exports = createBlobServiceClient;

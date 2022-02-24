@@ -135,29 +135,28 @@ describe('/admin', () => {
             .then(recordCSRF);
         });
 
-        it('add a new user', () =>
-          request(app)
-            .post('/add-user')
-            .type('form')
-            .set('Cookie', cookies)
-            .send({
-              _csrf: token,
-              accountType: constants.ADMIN_ACCOUNT,
-              username: 'foo-user',
-            })
-            .expect(200)
-            .then((response) => {
-              const { createUser } = successService.keyVaultService;
+        it('add a new user', () => request(app)
+          .post('/add-user')
+          .type('form')
+          .set('Cookie', cookies)
+          .send({
+            _csrf: token,
+            accountType: constants.ADMIN_ACCOUNT,
+            username: 'foo-user',
+          })
+          .expect(200)
+          .then((response) => {
+            const { createUser } = successService.keyVaultService;
 
-              expect(createUser.lastCall.args[0].accountType).to.equal(constants.ADMIN_ACCOUNT);
-              expect(createUser.lastCall.args[0].username).to.equal('foo-user');
-              expect(createUser.lastCall.args[0].password).to.match(chars16Long);
+            expect(createUser.lastCall.args[0].accountType).to.equal(constants.ADMIN_ACCOUNT);
+            expect(createUser.lastCall.args[0].username).to.equal('foo-user');
+            expect(createUser.lastCall.args[0].password).to.match(chars16Long);
 
-              const $ = cheerio.load(response.text);
+            const $ = cheerio.load(response.text);
 
-              expect($('.govuk-box-highlight').text()).to.include('User was successfully added');
-              expect($('.govuk-box-highlight').text()).to.include('foo-user');
-            }));
+            expect($('.govuk-box-highlight').text()).to.include('User was successfully added');
+            expect($('.govuk-box-highlight').text()).to.include('foo-user');
+          }));
       });
 
       describe('when something goes wrong with the service', () => {
@@ -172,21 +171,20 @@ describe('/admin', () => {
             .then(recordCSRF);
         });
 
-        it('notifies the user with an error', () =>
-          request(app)
-            .post('/add-user')
-            .type('form')
-            .set('Cookie', cookies)
-            .send({
-              _csrf: token,
-              accountType: constants.ADMIN_ACCOUNT,
-              username: 'foo-user',
-              password: securePassword,
-            })
-            .expect(400)
-            .then((response) => {
-              expect(response.text).to.include('class="error-summary"');
-            }));
+        it('notifies the user with an error', () => request(app)
+          .post('/add-user')
+          .type('form')
+          .set('Cookie', cookies)
+          .send({
+            _csrf: token,
+            accountType: constants.ADMIN_ACCOUNT,
+            username: 'foo-user',
+            password: securePassword,
+          })
+          .expect(400)
+          .then((response) => {
+            expect(response.text).to.include('class="error-summary"');
+          }));
       });
     });
   });
@@ -208,19 +206,18 @@ describe('/admin', () => {
         .get('/')
         .then(recordCSRF);
     });
-    it('deletes a user', () =>
-      request(app)
-        .post('/delete-user')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-          username: 'foo-user',
-        })
-        .expect(302)
-        .then((response) => {
-          expect(response.headers.location).to.equal('/admin');
-        }));
+    it('deletes a user', () => request(app)
+      .post('/delete-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        username: 'foo-user',
+      })
+      .expect(302)
+      .then((response) => {
+        expect(response.headers.location).to.equal('/admin');
+      }));
   });
 
   describe('/reset-password', () => {
@@ -241,37 +238,35 @@ describe('/admin', () => {
         .then(recordCSRF);
     });
 
-    it('Resets a users password', () =>
-      request(app)
-        .post('/reset-password')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-          username: 'foo-user',
-        })
-        .expect(200)
-        .then((response) => {
-          const createUserCalls = successService.keyVaultService.createUser.lastCall;
-          const getUserCall = successService.keyVaultService.getUser.lastCall;
+    it('Resets a users password', () => request(app)
+      .post('/reset-password')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        username: 'foo-user',
+      })
+      .expect(200)
+      .then((response) => {
+        const createUserCalls = successService.keyVaultService.createUser.lastCall;
+        const getUserCall = successService.keyVaultService.getUser.lastCall;
 
-          expect(getUserCall.args[0]).to.equal('foo-user');
-          expect(createUserCalls.args[0].username).to.equal('foo-user');
-          expect(createUserCalls.args[0].accountType).to.equal('user account');
-          expect(createUserCalls.args[0].password).to.match(chars16Long);
+        expect(getUserCall.args[0]).to.equal('foo-user');
+        expect(createUserCalls.args[0].username).to.equal('foo-user');
+        expect(createUserCalls.args[0].accountType).to.equal('user account');
+        expect(createUserCalls.args[0].password).to.match(chars16Long);
 
-          expect(response.text).to.include('User password was successfully reset');
-        }));
+        expect(response.text).to.include('User password was successfully reset');
+      }));
 
-    it('returns a 404 when a username is not specified', () =>
-      request(app)
-        .post('/reset-password')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-        })
-        .expect(404));
+    it('returns a 404 when a username is not specified', () => request(app)
+      .post('/reset-password')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+      })
+      .expect(404));
   });
 
   describe('/disable-user', () => {
@@ -292,32 +287,30 @@ describe('/admin', () => {
         .then(recordCSRF);
     });
 
-    it('Disables a user', () =>
-      request(app)
-        .post('/disable-user')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-          username: 'foo-user',
-        })
-        .expect(302)
-        .then((response) => {
-          const disableUserCall = successService.keyVaultService.disableUser.lastCall;
+    it('Disables a user', () => request(app)
+      .post('/disable-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        username: 'foo-user',
+      })
+      .expect(302)
+      .then((response) => {
+        const disableUserCall = successService.keyVaultService.disableUser.lastCall;
 
-          expect(disableUserCall.args[0]).to.equal('foo-user');
-          expect(response.headers.location).to.equal('/admin');
-        }));
+        expect(disableUserCall.args[0]).to.equal('foo-user');
+        expect(response.headers.location).to.equal('/admin');
+      }));
 
-    it('returns a 404 when a username is not specified', () =>
-      request(app)
-        .post('/disable-user')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-        })
-        .expect(404));
+    it('returns a 404 when a username is not specified', () => request(app)
+      .post('/disable-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+      })
+      .expect(404));
   });
 
   describe('/enable-user', () => {
@@ -338,31 +331,29 @@ describe('/admin', () => {
         .then(recordCSRF);
     });
 
-    it('Enables a user', () =>
-      request(app)
-        .post('/enable-user')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-          username: 'foo-user',
-        })
-        .expect(302)
-        .then((response) => {
-          const disableUserCall = successService.keyVaultService.disableUser.lastCall;
+    it('Enables a user', () => request(app)
+      .post('/enable-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+        username: 'foo-user',
+      })
+      .expect(302)
+      .then((response) => {
+        const disableUserCall = successService.keyVaultService.disableUser.lastCall;
 
-          expect(disableUserCall.args[0]).to.equal('foo-user');
-          expect(response.headers.location).to.equal('/admin');
-        }));
+        expect(disableUserCall.args[0]).to.equal('foo-user');
+        expect(response.headers.location).to.equal('/admin');
+      }));
 
-    it('returns a 404 when a username is not specified', () =>
-      request(app)
-        .post('/enable-user')
-        .type('form')
-        .set('Cookie', cookies)
-        .send({
-          _csrf: token,
-        })
-        .expect(404));
+    it('returns a 404 when a username is not specified', () => request(app)
+      .post('/enable-user')
+      .type('form')
+      .set('Cookie', cookies)
+      .send({
+        _csrf: token,
+      })
+      .expect(404));
   });
 });

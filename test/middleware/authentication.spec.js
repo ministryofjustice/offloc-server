@@ -197,7 +197,6 @@ describe('AuthenticationMiddleware', () => {
       .auth('the-username', 'the-password')
       .expect(401);
 
-
     await request(app)
       .get('/')
       .auth('the-username', 'the-password')

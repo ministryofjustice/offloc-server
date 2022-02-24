@@ -1,5 +1,5 @@
+const { expect } = require('chai');
 const { validateInput } = require('../../server/services/passwordValidation');
-
 
 describe('passwordValidationService', () => {
   const currentPassword = 'foo';
