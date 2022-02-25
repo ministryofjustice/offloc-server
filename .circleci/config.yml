@@ -62,7 +62,7 @@ jobs:
               git push --force origin HEAD:deploy-to-stage
 
               GIT_REF=$CIRCLE_SHA1 \
-              APP_BASE_URL=https://offloc-stage.hmpps.dsd.io/health \
+              APP_BASE_URL=https://stage.offloc.service.justice.gov.uk/health \
               WAIT_DURATION=45000 \
                 npm run wait-for-deploy
 
