@@ -4,8 +4,8 @@
 
 A simple server for downloading the latest NOMIS extract.
 
-
 # Getting started
+
 Install dependencies using `npm ci` ensure you are using >= `Node v14.15.1`
 
 Ensure you have a `.env` file containing all default env variables
@@ -17,19 +17,18 @@ For further details see:
 
 https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
 
-
 # Starting the app
 
 ### Build assets
 `npm run build`
 
-## Start the app
+### Start the app
 
 Ensure you build assets first
 
 `npm run start`
 
-### Runing the app in dev mode**
+### Running the app in dev mode**
 
 First ensure you are logged in with the azure cli:
 
@@ -62,4 +61,3 @@ https://stackoverflow.com/questions/37550100/cannot-find-module-dtrace-provider
 
 Run
 `npm rebuild dtrace-provider`
-
