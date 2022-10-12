@@ -94,10 +94,13 @@ jobs:
 
               git push --force origin "HEAD:<< parameters.push-to-branch >>"
 
-              GIT_REF=$CIRCLE_SHA1 \
-              APP_BASE_URL=https://stage.offloc.service.justice.gov.uk/health \
-              WAIT_DURATION=45000 \
-                npm run wait-for-deploy
+              # Production is IP allow-listed, so can only check deploy success in stage environment:
+              if [ "<< parameters.push-to-branch >>" == "azure-stage" ]; then
+                GIT_REF=$CIRCLE_SHA1 \
+                APP_BASE_URL=https://stage.offloc.service.justice.gov.uk/health \
+                WAIT_DURATION=45000 \
+                  npm run wait-for-deploy
+              fi
 
             fi
 
