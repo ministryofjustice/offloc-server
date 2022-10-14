@@ -22,7 +22,7 @@ jobs:
           name: Update npm
           command: 'sudo npm install -g npm@6.14.8'
       - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: cache-{{ checksum "package-lock.json" }}-{{ checksum "assets/sass/style.sass" }}
       - run:
           name: Install Dependencies
           command: npm ci --no-audit
@@ -30,7 +30,7 @@ jobs:
           name: Build assets
           command: npm run build
       - save_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: cache-{{ checksum "package-lock.json" }}-{{ checksum "assets/sass/style.sass" }}
           paths:
             - node_modules
             - assets/stylesheets
@@ -45,7 +45,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: cache-{{ checksum "package-lock.json" }}-{{ checksum "assets/sass/style.sass" }}
       - run:
           name: unit tests
           command: |
@@ -71,7 +71,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: cache-{{ checksum "package-lock.json" }}-{{ checksum "assets/sass/style.sass" }}
       - deploy:
           name: Build Derived Git Commit
           command: |
