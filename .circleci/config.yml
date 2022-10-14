@@ -123,7 +123,7 @@ workflows:
             - build
       - deploy:
           name: deploy_stage
-          push-to-branch: "deploy-to-stage"
+          push-to-branch: "azure-stage"
           requires:
             - unit_test
           filters:
