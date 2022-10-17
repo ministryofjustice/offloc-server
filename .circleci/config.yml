@@ -75,8 +75,6 @@ jobs:
       - deploy:
           name: Build Derived Git Commit
           command: |
-            if [ "${CIRCLE_BRANCH}" == "main" ]; then
-
               BUILD_NUMBER=$CIRCLE_BUILD_NUM \
               GIT_REF=$CIRCLE_SHA1 \
               GIT_DATE=$(git log --format=%cd -n1 --date=iso $CIRCLE_SHA1) \
@@ -90,12 +88,9 @@ jobs:
                 -m "$(git log --format=%B -n 1 $CIRCLE_SHA1)" \
                 -m "From gitref $CIRCLE_SHA1"
 
-            fi
       - deploy:
           name: Deploy
           command: |
-            if [ "${CIRCLE_BRANCH}" == "main" ]; then
-
               git push --force origin "HEAD:<< parameters.push-to-branch >>"
 
               # Production is IP allow-listed, so can only check deploy success in stage environment:
@@ -106,7 +101,6 @@ jobs:
                   npm run wait-for-deploy
               fi
 
-            fi
 
 workflows:
   version: 2
@@ -126,10 +120,6 @@ workflows:
           push-to-branch: "azure-stage"
           requires:
             - unit_test
-          filters:
-            branches:
-              only:
-                - main
       - request-prod-approval:
           type: approval
           requires:

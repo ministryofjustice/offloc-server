@@ -16,9 +16,9 @@ function validateInput({ currentPassword, newPassword, confirmPassword }) {
     errors.push({ type: 'passwordMismatch', value: errorMessages.passwordMismatch });
   }
 
-  if (newPassword.length < 16) {
-    errors.push({ type: 'min', value: errorMessages.min });
-  }
+  // if (newPassword.length < 16) {
+  //   errors.push({ type: 'min', value: errorMessages.min });
+  // }
 
   if (newPassword.length > 100) {
     errors.push({ type: 'max', value: errorMessages.max });
