@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <% include ../partials/head %>
+    <%- include ("../partials/head") %>
   </head>
   <body>
 
-    <% include ../partials/header %>
+    <%- include ("../partials/header") %>
 
     <main id="content" class="app-container" role="main">
       <div class="grid-row">
@@ -52,7 +52,7 @@
             </div>
 
             <div class="panel panel-border-wide u-margin-bottom-medium">
-              <strong>A password will be generated upon successful submition.</strong>
+              <strong>A password will be generated upon successful submission.</strong>
             </div>
 
             <button class="button" type="submit">Add new user</button>
@@ -61,6 +61,6 @@
       </div>
     </main>
 
-    <% include ../partials/footer %>
+    <%- include ("../partials/footer") %>
   </body>
 </html>
