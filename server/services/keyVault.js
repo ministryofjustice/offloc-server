@@ -181,8 +181,8 @@ async function createKeyVaultService(override) {
   async function getAllSecrets() {
     const secrets = [];
     // eslint-disable-next-line no-restricted-syntax
-    for await (const property of client.listPropertiesOfSecrets()) {
-      secrets.push(decorateUser({ property }));
+    for await (const properties of client.listPropertiesOfSecrets()) {
+      secrets.push(decorateUser({ properties }));
     }
 
     return secrets;
