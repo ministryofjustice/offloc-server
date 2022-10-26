@@ -21,5 +21,12 @@ module.exports = {
   azureBloStorageResourceGroup: get('AZURE_STORAGE_RESOURCE_GROUP', 'your-resource-group', { requireInProduction: true }),
   azureBlobStorageSubscriptionId: get('AZURE_STORAGE_SUBSCRIPTION_ID', 'your-key', { requireInProduction: true }),
   keyVaultUrl: get('KEY_VAULT_URL', 'your-key', { requireInProduction: true }),
+
+  /**
+   * The APPSETTING_WEBSITE_SITE_NAME is a default environment variable provided by Azure App
+   * Service:
+   *
+   * https://learn.microsoft.com/en-us/azure/app-service/reference-app-settings?tabs=kudu%2Cdotnet#app-environment
+   */
   appSettingsWebsiteSiteName: get('APPSETTING_WEBSITE_SITE_NAME', null, { requireInProduction: true }),
 };
