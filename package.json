@@ -26,6 +26,10 @@
     "delay": "2500"
   },
   "dependencies": {
+    "@azure/arm-storage": "^18.0.0",
+    "@azure/identity": "^3.0.0",
+    "@azure/keyvault-secrets": "^4.6.0",
+    "@azure/storage-blob": "^12.12.0",
     "applicationinsights": "^1.0.2",
     "azure-arm-storage": "^4.0.0",
     "azure-keyvault": "^3.0.4-preview",

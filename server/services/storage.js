@@ -9,7 +9,6 @@ const getDate = require('date-fns/get_date');
 
 const config = require('../config');
 const logger = require('../loggers/logger');
-const azureLocal = require('./azure-local');
 
 function addHoursToTime(date, hours) {
   date.setTime(date.getTime() + (hours * 60 * 60 * 1000));
@@ -22,7 +21,7 @@ function getStorageCredentials() {
     return msRestAzure.loginWithAppServiceMSI();
   }
 
-  return azureLocal.createBlobStorageCredentials(config.azureBlobStorageSubscriptionId);
+  throw new Error('Cannot retrieve storage credentials - must run inside App Service');
 }
 
 async function createBlobServiceClient(blobServiceClient) {

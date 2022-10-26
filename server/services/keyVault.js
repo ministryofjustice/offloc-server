@@ -1,17 +1,16 @@
 const bcrypt = require('bcrypt');
-const msRestAzure = require('ms-rest-azure');
-const { KeyVaultClient } = require('azure-keyvault');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SecretClient } = require('@azure/keyvault-secrets');
 const formatDate = require('date-fns/format');
 const addMinutes = require('date-fns/add_minutes');
 
 const logger = require('../loggers/logger');
 const config = require('../config');
 const constants = require('../constants/app');
-const { createVaultCredentials } = require('./azure-local');
 
 const keyVaultUri = config.keyVaultUrl;
 
-function expireIn(ms) {
+function expiresOn(ms) {
   const date = new Date();
   date.setTime(date.getTime() + ms);
 
@@ -20,16 +19,14 @@ function expireIn(ms) {
 
 function getKeyVaultCredentials() {
   if (config.appSettingsWebsiteSiteName) {
-    return msRestAzure.loginWithAppServiceMSI({
-      resource: 'https://vault.azure.net',
-    });
+    return new DefaultAzureCredential();
   }
 
-  return Promise.resolve(createVaultCredentials());
+  throw new Error('Cannot retrieve KeyVault credentials - must run inside App Service');
 }
 
 async function createKeyVaultService(override) {
-  const client = override || new KeyVaultClient(await getKeyVaultCredentials());
+  const client = override || new SecretClient(keyVaultUri, getKeyVaultCredentials());
 
   return {
     createUser,
@@ -105,45 +102,49 @@ async function createKeyVaultService(override) {
   }
 
   async function getUser(name) {
-    const user = await client.getSecret(keyVaultUri, name, '');
+    const user = await client.getSecret(name);
 
     return decorateUser(user);
   }
 
   function decorateUser(user) {
-    const { value, attributes, contentType } = user;
-    const accountData = getContentType(contentType);
+    const { value, properties } = user;
+    const accountData = getContentType(properties.contentType);
+    const getUserName = (str) => str.match(/\/([\w-_]+)$/);
+    const username = getUserName(properties.name);
 
     return {
       password: value,
+      username: (username) ? username[1] : username,
       accountType: accountData.accountType,
       disabled: accountData.disabled,
-      expires: attributes.expires,
-      validFrom: attributes.notBefore,
+      version: properties.version,
+      expires: properties.expiresOn,
+      validFrom: properties.notBefore,
+      expiresPretty: formatDate(properties.expiresOn, 'DD/MM/YYYY'),
     };
   }
 
   function deleteUser(name) {
-    return client.deleteSecret(keyVaultUri, name);
+    return client.beginDeleteSecret(name);
   }
 
   async function updateContentType(name, opts) {
-    const { accountType, disabled } = await getUser(name);
+    const { accountType, disabled, version } = await getUser(name);
     const updatedContentType = { accountType, disabled, ...opts };
 
-    return client.updateSecret(keyVaultUri, name, '', {
+    return client.updateSecretProperties(name, version, {
       contentType: JSON.stringify(updatedContentType),
     });
   }
 
   async function temporarilyLockUser(name) {
-    const user = await client.updateSecret(keyVaultUri, name, '', {
-      secretAttributes: {
-        notBefore: addMinutes(Date.now(), 15),
-      },
+    const user = await client.getSecret(name);
+    const properties = await client.updateSecretProperties(name, user.properties.version, {
+      notBefore: addMinutes(Date.now(), 15),
     });
 
-    return decorateUser(user);
+    return decorateUser({ ...user, properties });
   }
 
   function disableUser(name) {
@@ -159,55 +160,32 @@ async function createKeyVaultService(override) {
   }) {
     const hashedPassword = await generatePasswordHash(password);
 
-    const attributes = {
-      expires: expireIn(expiry),
-      notBefore: new Date(),
-    };
-
-    return client.setSecret(keyVaultUri, username, hashedPassword, {
+    return client.setSecret(username, hashedPassword, {
       contentType: JSON.stringify({
         accountType: accountType || constants.USER_ACCOUNT,
         disabled: false,
       }),
-      secretAttributes: attributes,
+      expiresOn: expiresOn(expiry),
+      notBefore: new Date(),
     });
   }
 
   async function listUsers() {
     const secrets = await getAllSecrets();
-    const accounts = ({ contentType }) => {
-      const { accountType } = getContentType(contentType);
-      return accountType === constants.USER_ACCOUNT || accountType === constants.ADMIN_ACCOUNT;
-    };
-    const getUserName = (str) => str.match(/\/([\w-_]+)$/);
+    const accounts = ({ accountType }) => accountType === constants.USER_ACCOUNT
+      || accountType === constants.ADMIN_ACCOUNT;
 
-    return secrets
-      .filter(accounts)
-      .map((account) => {
-        const username = getUserName(account.id);
-        const { accountType, disabled } = getContentType(account.contentType);
-
-        return {
-          disabled,
-          accountType,
-          username: (username) ? username[1] : username,
-          expires: account.attributes.expires,
-          expiresPretty: formatDate(account.attributes.expires, 'DD/MM/YYYY'),
-        };
-      });
+    return secrets.filter(accounts);
   }
 
   async function getAllSecrets() {
-    const result = await client.getSecrets(keyVaultUri);
-
-    while (result.nextLink) {
-      // eslint-disable-next-line no-await-in-loop
-      const more = await client.getSecretsNext(result.nextLink);
-      [].push.apply(result, more);
-      result.nextLink = more.nextLink;
+    const secrets = [];
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const property of client.listPropertiesOfSecrets()) {
+      secrets.push(decorateUser({ property }));
     }
 
-    return result;
+    return secrets;
   }
 }
 
