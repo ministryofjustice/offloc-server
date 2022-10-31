@@ -110,8 +110,8 @@ async function createKeyVaultService(override) {
   function decorateUser(user) {
     const { value, properties } = user;
     const accountData = getContentType(properties.contentType);
-    const getUserName = (str) => str.match(/\/([\w-_]+)$/);
-    const username = getUserName(properties.name);
+    const getUserName = (str) => (str ? str.match(/\/([\w-_]+)$/) : undefined);
+    const username = getUserName(properties.id);
 
     return {
       password: value,
