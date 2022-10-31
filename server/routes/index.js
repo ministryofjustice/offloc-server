@@ -8,7 +8,7 @@ module.exports = function Index({ storageService }) {
     try {
       const file = await storageService.todaysFile();
 
-      res.render('pages/index', { latestFileName: file && file.name });
+      res.render('pages/index', { latestFileName: file });
     } catch (ex) {
       next(ex);
     }
@@ -28,27 +28,17 @@ module.exports = function Index({ storageService }) {
   router.get('/:fileName.zip', async (req, res, next) => {
     try {
       const fileName = `${req.params.fileName}.zip`;
-      const stream = await storageService.downloadFile(fileName);
+      const fileProperties = await storageService.getFileProperties(fileName);
 
-      if (stream == null) {
+      if (fileProperties == null) {
         res.status(404);
         res.render('pages/404');
         return;
       }
 
-      stream
-        .on('error', (error) => {
-          logger.error(error);
-          res.status(404);
-          res.render('pages/404');
-        });
-
-      stream
-        .once('data', () => {
-          res.set('content-length', stream.contentLength);
-          res.type('application/x-zip-compressed');
-        });
-
+      res.set('content-length', fileProperties.contentLength);
+      res.type('application/x-zip-compressed');
+      const stream = await storageService.downloadFile(fileName);
       stream.pipe(res);
     } catch (exception) {
       next(exception);

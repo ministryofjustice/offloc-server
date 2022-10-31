@@ -1,6 +1,6 @@
-const msRestAzure = require('ms-rest-azure');
-const azureStorage = require('azure-storage');
-const StorageManagementClient = require('azure-arm-storage');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { StorageManagementClient } = require('@azure/arm-storage');
+const { BlobServiceClient } = require('@azure/storage-blob');
 
 const subDays = require('date-fns/sub_days');
 const subMonths = require('date-fns/sub_months');
@@ -18,7 +18,7 @@ function addHoursToTime(date, hours) {
 
 function getStorageCredentials() {
   if (config.appSettingsWebsiteSiteName) {
-    return msRestAzure.loginWithAppServiceMSI();
+    return new DefaultAzureCredential();
   }
 
   throw new Error('Cannot retrieve storage credentials - must run inside App Service');
@@ -35,7 +35,7 @@ async function createBlobServiceClient(blobServiceClient) {
     const permissions = 'r';
     const startDate = new Date().toUTCString();
     const endDate = addHoursToTime(new Date(), 1).toUTCString();
-    const credentials = await getStorageCredentials();
+    const credentials = getStorageCredentials();
     const client = new StorageManagementClient(credentials, subscriptionId);
 
     const { keys } = await client
@@ -55,16 +55,26 @@ async function createBlobServiceClient(blobServiceClient) {
     const key = keys[0].value;
     const connectionString = `DefaultEndpointsProtocol=https;AccountName=${accountName};AccountKey=${key};EndpointSuffix=core.windows.net`;
 
-    service = azureStorage.createBlobService(connectionString);
+    service = BlobServiceClient.fromConnectionString(connectionString)
+      .getContainerClient(containerName);
   } else {
     service = blobServiceClient;
   }
 
   return {
+    getFileProperties: getFileProperties(service),
     downloadFile: downloadFile(service),
     todaysFile: todaysFile(service),
     listFiles: listFiles(service),
   };
+}
+
+function getFileProperties(service) {
+  return async (blobName) => service.getBlobClient(blobName).getProperties()
+    .catch((error) => {
+      logger.error(`Error fetching properties for blob: ${blobName}`, error);
+      return null;
+    });
 }
 
 function listFiles(service) {
@@ -91,21 +101,13 @@ function listFiles(service) {
   };
 }
 
-function getBlobsByPrefix(service, prefix) {
-  return new Promise((resolve, reject) => {
-    service.listBlobsSegmentedWithPrefix(
-      config.azureBlobStorageContainerName,
-      prefix,
-      null,
-      (error, data) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(data.entries);
-        }
-      },
-    );
-  });
+async function getBlobsByPrefix(service, prefix) {
+  const blobs = [];
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const blob of service.listBlobsFlat({ prefix })) {
+    blobs.push(blob);
+  }
+  return blobs;
 }
 
 function getFilesNamesInTheLast(daysLeft, date = new Date(), dates = []) {
@@ -130,57 +132,25 @@ function todaysFileName() {
 }
 
 function todaysFile(service) {
-  return () => new Promise((resolve) => {
+  return async () => {
     const blobName = todaysFileName();
+    const exists = await service.getBlobClient(blobName)
+      .exists()
+      .catch((error) => {
+        logger.error('Error checking for file existence', error);
+        return false;
+      });
 
-    logger.debug({ todaysFile: blobName }, 'Fetching todays file');
-
-    service.doesBlobExist(config.azureBlobStorageContainerName, blobName, (error, result) => {
-      if (error) logger.error(error);
-
-      if (result && result.exists) {
-        logger.debug({ todaysFile: blobName }, 'Found today\'s file');
-
-        return resolve(result);
-      }
-      logger.debug({ todaysFile: blobName }, 'Today\'s file not found');
-      return resolve(null);
-    });
-  });
+    logger.debug({ todaysFile: blobName }, exists ? 'Found today\'s file' : 'Today\'s file not found');
+    return exists ? blobName : null;
+  };
 }
 
 function downloadFile(service) {
   return async (blobName) => {
     logger.debug({ file: blobName }, 'Downloading file');
-
-    // Fetch properties so we can set a content-length response header
-    // this allows the proxy server to know whether it can buffer the response
-    const properties = await new Promise((resolve, reject) => {
-      service.getBlobProperties(
-        config.azureBlobStorageContainerName,
-        blobName,
-        (err, props) => {
-          if (err && err.code === 'NotFound') return resolve(null);
-          if (err) return reject(err);
-          return resolve(props);
-        },
-      );
-    });
-
-    // Resolved from NotFound
-    if (!properties) {
-      return null;
-    }
-
-    const stream = service.createReadStream(
-      config.azureBlobStorageContainerName,
-      blobName,
-      { disableContentMD5Validation: true },
-    );
-
-    stream.contentLength = properties.contentLength;
-
-    return stream;
+    const download = await service.getBlobClient(blobName).download();
+    return download.readableStreamBody;
   };
 }
 
