@@ -58,7 +58,7 @@
     "http-errors": "~1.6.3",
     "mkdirp": "^0.5.1",
     "morgan": "~1.9.0",
-    "ms-rest-azure": "^3.0.2",
+    "ms-rest-azure": "^2.5.5",
     "nocache": "^2.1.0",
     "node-sass-middleware": "^1.0.1",
     "poll-endpoint-for": "^0.0.4",

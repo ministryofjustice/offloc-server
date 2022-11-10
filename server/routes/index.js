@@ -25,6 +25,12 @@ module.exports = function Index({ storageService }) {
     }
   });
 
+  router.get('/upload/:fileName.zip', async (req, res) => {
+    const fileName = `${req.params.fileName}.zip`;
+    await storageService.uploadFile(fileName);
+    res.status(200);
+  });
+
   router.get('/:fileName.zip', async (req, res, next) => {
     try {
       const fileName = `${req.params.fileName}.zip`;
