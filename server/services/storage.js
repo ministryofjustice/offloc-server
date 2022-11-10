@@ -62,6 +62,7 @@ async function createBlobServiceClient(blobServiceClient) {
 
   return {
     downloadFile: downloadFile(service),
+    uploadFile: uploadFile(service),
     todaysFile: todaysFile(service),
     listFiles: listFiles(service),
   };
@@ -147,6 +148,25 @@ function todaysFile(service) {
       return resolve(null);
     });
   });
+}
+
+function uploadFile(service) {
+  return async (blobName) => {
+    logger.debug({ file: blobName }, 'Uploading file');
+    await new Promise((resolve, reject) => {
+      service.createBlockBlobFromText(
+        config.azureBlobStorageContainerName,
+        blobName,
+        'foo',
+        (err, props) => {
+          if (err) return reject(err);
+          return resolve(props);
+        },
+      );
+    });
+
+    logger.debug({ file: blobName }, 'Finished uploading file');
+  };
 }
 
 function downloadFile(service) {
