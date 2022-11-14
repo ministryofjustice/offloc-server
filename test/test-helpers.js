@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { Readable } = require('stream');
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
@@ -20,24 +19,31 @@ function binaryParser(res, callback) {
   });
 }
 
+async function* listBlobsFlat(entries) {
+  // eslint-disable-next-line no-restricted-syntax
+  for (const entry of entries) {
+    yield entry;
+  }
+}
+
 function createBlobServiceSuccess({ entry, entries = [] } = {}) {
   return {
-    listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(null, { entries }),
-    doesBlobExist: (containerName, blobName, callback) => callback(null, entry),
-    getBlobProperties: (containerName, blobName, callback) => callback(null, entry),
-    createReadStream: () => fs.createReadStream(path.resolve(__dirname, './resources/20181704.zip')),
+    getBlobClient: (_blobName) => ({
+      exists: () => Promise.resolve(!!entry),
+      getProperties: () => Promise.resolve({ contentLength: 390 }),
+      download: () => Promise.resolve({
+        readableStreamBody: fs.createReadStream(path.resolve(__dirname, './resources/20181704.zip')),
+      }),
+    }),
+    listBlobsFlat: (_options) => listBlobsFlat(entry ? [entry] : entries),
   };
 }
 
 function createBlobServiceError() {
   return {
-    doesBlobExist: (containerName, blobName, callback) => callback('error', null),
-    listBlobsSegmentedWithPrefix: (containerName, prefix, _, cb) => cb(true, null),
-    getBlobProperties: (containerName, blobName, callback) => callback(null, {}),
-    createReadStream: () => new Readable({
-      read() {
-        process.nextTick(() => this.emit('error', 'some error'));
-      },
+    getBlobClient: (_blobName) => ({
+      exists: () => Promise.reject(Error('Error!')),
+      getProperties: () => Promise.reject(Error('Not found!')),
     }),
   };
 }

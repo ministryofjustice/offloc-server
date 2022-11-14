@@ -55,7 +55,7 @@ describe('GET /', () => {
   describe('when there are files in the last 14 days available', () => {
     it('display files from the last 14 days', async () => {
       const app = setupBasicApp();
-      const service = await storageService(createBlobServiceSuccess({ entry, entries }));
+      const service = await storageService(createBlobServiceSuccess({ entries }));
 
       app.use(createIndexRouter({
         storageService: service,
@@ -76,7 +76,8 @@ describe('GET /', () => {
   describe('when there isn\'t file available for download', () => {
     it('respond with a page displaying the corresponding message', async () => {
       const app = setupBasicApp();
-      const service = await storageService(createBlobServiceError());
+      const noEntries = {};
+      const service = await storageService(createBlobServiceSuccess(noEntries));
 
       app.use(createIndexRouter({
         storageService: service,
@@ -104,6 +105,7 @@ describe('GET /', () => {
       return request(app)
         .get('/20180418.zip')
         .expect('Content-Type', /zip/)
+        .expect('Content-Length', /390/)
         .expect(200)
         .buffer()
         .parse(binaryParser)
@@ -119,12 +121,7 @@ describe('GET /', () => {
   describe('Unsuccessful download request', () => {
     it('returns a 404 when an error occurs with the download', async () => {
       const app = setupBasicApp();
-      const notFoundError = new Error('NotFound');
-      notFoundError.code = 'NotFound';
-      const blobService = {
-        getBlobProperties: sinon.stub().yields(notFoundError),
-      };
-      const service = await storageService(blobService);
+      const service = await storageService(createBlobServiceError());
 
       app.use(createIndexRouter({
         storageService: service,
