@@ -44,7 +44,7 @@
     "date-fns": "^1.29.0",
     "dotenv": "^5.0.1",
     "ejs": "^3.1.8",
-    "express": "~4.16.3",
+    "express": "~4.17.3",
     "express-request-id": "^1.4.0",
     "generate-password": "^1.4.0",
     "govuk_frontend_toolkit": "^7.5.0",
