@@ -9,7 +9,8 @@
     "lint": "eslint . --cache --max-warnings 0",
     "test": "mocha --config test/.mocharc.js",
     "wait-for-deploy": "node ./bin/wait-for-deploy",
-    "record-build-info": "node ./bin/record-build-info"
+    "record-build-info": "node ./bin/record-build-info",
+    "security_audit": "npx audit-ci --config audit-ci.json"
   },
   "engines": {
     "node": "^14.15.1",
